@@ -39,9 +39,9 @@ function SettingsContent() {
 
   const planes = [
     {
-      id: "Soft",
-      name: "Soft",
-      price: 1,
+      id: "Glow",
+      name: "Glow",
+      price: 750,
       icon: <Zap size={20} />,
       features: ["1 Especialista", "50 citas/mes"],
     },
@@ -50,7 +50,7 @@ function SettingsContent() {
       name: "Radiance",
       price: 1450,
       icon: <Star size={20} />,
-      features: ["4 Especialistas", "200 citas/mes", "Estadísticas"],
+      features: ["3 Especialistas", "250 citas/mes", "Estadísticas"],
     },
     {
       id: "Diamond",

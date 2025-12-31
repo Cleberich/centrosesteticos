@@ -245,7 +245,7 @@ const HomePage = () => {
               {
                 name: "Soft",
                 price: "GRATIS",
-                features: ["1 Especialista", "15 Citas", "Agenda Básica"],
+                features: ["1 Especialista", "20 Citas", "Agenda Básica"],
               },
               {
                 name: "Glow",
@@ -262,8 +262,8 @@ const HomePage = () => {
                 popular: true,
                 features: [
                   "4 Especialistas",
-                  "Ilimitado",
-                  "Estadísticas Avanzadas",
+                  "250 Citas/mes",
+                  "Estadísticas",
                   "Recordatorios",
                 ],
               },
@@ -271,10 +271,11 @@ const HomePage = () => {
                 name: "Diamond",
                 price: "$2200",
                 features: [
-                  "Ilimitado",
-                  "Multisucursal",
-                  "Marketing VIP",
-                  "Soporte 24/7",
+                  "Especialistas Ilimitados",
+                  "Citas Ilimitadas",
+                  "Marketing",
+                  "Recordatorios",
+                  "Finanzas",
                 ],
               },
             ].map((plan, i) => (
