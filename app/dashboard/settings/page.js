@@ -97,7 +97,7 @@ function SettingsContent() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           planId: plan.id,
-          planName: `Plan Aura ${plan.name}`,
+          planName: `${plan.name}`,
           price: plan.price,
           userId: auth.currentUser.uid,
           businessName: esteticaData.businessName,
