@@ -77,7 +77,7 @@ export async function POST(request) {
           external_reference: userId,
           back_urls: {
             // IMPORTANTE: Agregamos ?plan=${planId} para que tu web sepa qué plan compró al volver
-            success: `https://barberias.vercel.app/dashboard/settings?plan=${planId}`,
+            success: `https://centrosesteticos.vercel.app/dashboard/settings?plan=${planId}`,
             failure:
               "https://barberias-aldia.vercel.app/dashboard/settings?status=failed",
             pending:
