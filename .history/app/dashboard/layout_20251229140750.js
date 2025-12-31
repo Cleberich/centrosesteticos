@@ -1,0 +1,169 @@
+"use client";
+
+import React, { useState, useEffect } from "react";
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
+import {
+  LayoutDashboard,
+  Calendar,
+  Users,
+  Scissors,
+  Settings,
+  LogOut,
+  BarChart3,
+  Loader2,
+} from "lucide-react";
+
+// Firebase
+import { auth, db } from "@/services/firebase";
+import { onAuthStateChanged, signOut } from "firebase/auth";
+import { doc, getDoc } from "firebase/firestore";
+
+export default function DashboardLayout({ children }) {
+  const pathname = usePathname();
+  const router = useRouter();
+
+  // --- ESTADOS DE USUARIO ---
+  const [userData, setUserData] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        try {
+          const docRef = doc(db, "barberias", user.uid);
+          const docSnap = await getDoc(docRef);
+          if (docSnap.exists()) {
+            setUserData(docSnap.data());
+          }
+        } catch (error) {
+          console.error("Error al cargar datos del layout:", error);
+        } finally {
+          setLoading(false);
+        }
+      } else {
+        router.push("/login");
+      }
+    });
+
+    return () => unsubscribe();
+  }, [router]);
+
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      router.push("/login");
+    } catch (error) {
+      console.error("Error al cerrar sesión:", error);
+    }
+  };
+
+  // Componente interno para los links del sidebar
+  const SidebarLink = ({ href, icon, label, variant = "default", onClick }) => {
+    const active = pathname === href;
+    const styles = active
+      ? "bg-blue-600 text-white shadow-md shadow-blue-500/20"
+      : "text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-200";
+
+    const content = (
+      <div
+        className={`flex items-center gap-3 px-3 py-3 rounded-xl transition-all font-medium text-sm cursor-pointer ${styles} ${
+          variant === "danger"
+            ? "text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20"
+            : ""
+        }`}
+      >
+        {icon}
+        <span className="font-bold tracking-tight">{label}</span>
+      </div>
+    );
+
+    if (onClick) return <div onClick={onClick}>{content}</div>;
+    return <Link href={href}>{content}</Link>;
+  };
+
+  return (
+    <div className="flex h-screen w-full bg-slate-50 dark:bg-slate-950 overflow-hidden font-sans">
+      {/* SIDEBAR PERSISTENTE */}
+      <aside className="hidden lg:flex flex-col w-72 border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 h-full p-6">
+        <div className="flex flex-col h-full justify-between">
+          <div className="space-y-8">
+            {/* PERFIL DE LA BARBERÍA DINÁMICO */}
+            <div className="flex items-center gap-3 px-2">
+              <div className="size-12 rounded-full border-2 border-blue-600 bg-slate-100 dark:bg-slate-800 flex items-center justify-center overflow-hidden">
+                {loading ? (
+                  <Loader2 className="animate-spin text-blue-600" size={18} />
+                ) : (
+                  <span className="text-xl font-black text-blue-600 italic">
+                    {userData?.businessName?.charAt(0) || "B"}
+                  </span>
+                )}
+              </div>
+              <div className="flex-1 min-w-0">
+                <h1 className="text-sm font-black truncate uppercase italic">
+                  {loading
+                    ? "Cargando..."
+                    : userData?.businessName || "Mi Barbería"}
+                </h1>
+                <span className="text-[9px] font-black text-blue-600 bg-blue-50 dark:bg-blue-600/10 px-2 py-0.5 rounded-full uppercase tracking-widest">
+                  Plan {userData?.plan?.type || "Basic"}
+                </span>
+              </div>
+            </div>
+
+            <nav className="space-y-1">
+              <p className="text-[10px] font-black uppercase text-slate-400 ml-3 mb-2 tracking-[0.2em]">
+                Gestión
+              </p>
+              <SidebarLink
+                href="/dashboard"
+                icon={<LayoutDashboard size={20} />}
+                label="Panel de Control"
+              />
+              <SidebarLink
+                href="/dashboard/calendar"
+                icon={<Calendar size={20} />}
+                label="Calendario"
+              />
+              <SidebarLink
+                href="/dashboard/clientes"
+                icon={<Users size={20} />}
+                label="Clientes"
+              />
+              <SidebarLink
+                href="/dashboard/services"
+                icon={<Scissors size={20} />}
+                label="Servicios"
+              />
+              <SidebarLink
+                href="/dashboard/accounting"
+                icon={<BarChart3 size={20} />}
+                label="Contabilidad"
+              />
+            </nav>
+          </div>
+
+          <div className="space-y-1 pt-6 border-t border-slate-100 dark:border-slate-800">
+            <SidebarLink
+              href="/dashboard/settings"
+              icon={<Settings size={20} />}
+              label="Configuración"
+            />
+            <SidebarLink
+              href="#"
+              icon={<LogOut size={20} />}
+              label="Cerrar Sesión"
+              variant="danger"
+              onClick={handleLogout}
+            />
+          </div>
+        </div>
+      </aside>
+
+      {/* ÁREA DE CONTENIDO */}
+      <main className="flex-1 flex flex-col min-w-0 overflow-hidden relative">
+        {children}
+      </main>
+    </div>
+  );
+}

@@ -1,0 +1,26 @@
+{
+    "sourceFile": "app/api/checkout/route.js",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 2,
+            "patches": [
+                {
+                    "date": 1767034959424,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1767035247767,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,12 +1,11 @@\n import { NextResponse } from \"next/server\";\n import { MercadoPagoConfig, Preference } from \"mercadopago\";\n \n-// Agrega tu Access Token de Mercado Pago en tu archivo .env\n-const client = new MercadoPagoConfig({\n-  accessToken: process.env.MP_ACCESS_TOKEN,\n+// Configuración del cliente\n+const client = new MercadoPagoConfig({ \n+  accessToken: process.env.MP_ACCESS_TOKEN \n });\n-\n export async function POST(request) {\n   const { planName, price, userId } = await request.json();\n \n   try {\n"
+                },
+                {
+                    "date": 1767037776215,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,35 +1,34 @@\n import { NextResponse } from \"next/server\";\n-import { MercadoPagoConfig, Preference } from \"mercadopago\";\n \n-// Configuración del cliente\n-const client = new MercadoPagoConfig({\n-  accessToken: process.env.MP_ACCESS_TOKEN,\n-});\n export async function POST(request) {\n-  const { planName, price, userId } = await request.json();\n+  try {\n+    const { planId, planName, price, userId } = await request.json();\n \n-  try {\n-    const preference = await new Preference(client).create({\n-      body: {\n-        items: [\n-          {\n-            title: `Plan ${planName} - BarberPro`,\n-            quantity: 1,\n-            unit_price: Number(price),\n-            currency_id: \"ARS\", // O tu moneda local\n-          },\n-        ],\n+    const response = await fetch(\"https://api.mercadopago.com/checkout/preferences\", {\n+      method: \"POST\",\n+      headers: {\n+        // REEMPLAZA ESTO CON TU TOKEN REAL DE MERCADO PAGO\n+        \"Authorization\": `Bearer APP_USR-8386419448375631-010515-56f87455e8109d9418652427a1a9e38e-201646279`,\n+        \"Content-Type\": \"application/json\",\n+      },\n+      body: JSON.stringify({\n+        items: [{\n+          title: `Plan ${planName}`,\n+          unit_price: Number(price),\n+          quantity: 1,\n+          currency_id: \"UYU\"\n+        }],\n         back_urls: {\n-          success: `${process.env.NEXT_PUBLIC_URL}/dashboard/settings?status=success`,\n-          failure: `${process.env.NEXT_PUBLIC_URL}/dashboard/settings?status=failure`,\n+          success: `http://localhost:3000/dashboard/settings?status=approved&plan=${planId}`,\n+          failure: `http://localhost:3000/dashboard/settings?status=failed`\n         },\n         auto_return: \"approved\",\n-        external_reference: userId, // Guardamos el UID para identificar al barbero\n-      },\n+      }),\n     });\n \n-    return NextResponse.json({ init_point: preference.init_point });\n+    const data = await response.json();\n+    return NextResponse.json({ url: data.init_point });\n   } catch (error) {\n-    return NextResponse.json({ error: \"Error al crear pago\" }, { status: 500 });\n+    return NextResponse.json({ error: error.message }, { status: 500 });\n   }\n-}\n+}\n\\ No newline at end of file\n"
+                }
+            ],
+            "date": 1767034959424,
+            "name": "Commit-0",
+            "content": "import { NextResponse } from \"next/server\";\nimport { MercadoPagoConfig, Preference } from \"mercadopago\";\n\n// Agrega tu Access Token de Mercado Pago en tu archivo .env\nconst client = new MercadoPagoConfig({ \n  accessToken: process.env.MP_ACCESS_TOKEN \n});\n\nexport async function POST(request) {\n  const { planName, price, userId } = await request.json();\n\n  try {\n    const preference = await new Preference(client).create({\n      body: {\n        items: [\n          {\n            title: `Plan ${planName} - BarberPro`,\n            quantity: 1,\n            unit_price: Number(price),\n            currency_id: \"ARS\", // O tu moneda local\n          }\n        ],\n        back_urls: {\n          success: `${process.env.NEXT_PUBLIC_URL}/dashboard/settings?status=success`,\n          failure: `${process.env.NEXT_PUBLIC_URL}/dashboard/settings?status=failure`,\n        },\n        auto_return: \"approved\",\n        external_reference: userId, // Guardamos el UID para identificar al barbero\n      },\n    });\n\n    return NextResponse.json({ init_point: preference.init_point });\n  } catch (error) {\n    return NextResponse.json({ error: \"Error al crear pago\" }, { status: 500 });\n  }\n}"
+        }
+    ]
+}

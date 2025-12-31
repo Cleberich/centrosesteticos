@@ -1,0 +1,26 @@
+{
+    "sourceFile": "services/firebase/index.js",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 2,
+            "patches": [
+                {
+                    "date": 1767036351141,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1767036447768,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -20,14 +20,12 @@\n // Exporta los servicios que necesitas\n const app = initializeApp(firebaseConfig);\n const auth = getAuth(app);\n const db = getFirestore(app);\n-const googleProvider = new GoogleAuthProvider();\n \n // EXPORTA LAS FUNCIONES Y OBJETOS\n export {\n   auth,\n   db,\n-  googleProvider,\n   signInWithEmailAndPassword,\n   signInWithPopup,\n };\n"
+                },
+                {
+                    "date": 1767036532076,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -21,6 +21,6 @@\n const app = initializeApp(firebaseConfig);\n const auth = getAuth(app);\n const db = getFirestore(app);\n \n-// EXPORTA LAS FUNCIONES Y OBJETOS\n-export { auth, db, signInWithEmailAndPassword, signInWithPopup };\n+// Exportamos solo lo necesario para Email/Password\n+export { auth, db, signInWithEmailAndPassword, createUserWithEmailAndPassword };\n"
+                }
+            ],
+            "date": 1767036351141,
+            "name": "Commit-0",
+            "content": "// firebase/config.js\n\nimport { initializeApp } from \"firebase/app\";\nimport { getAuth } from \"firebase/auth\";\nimport { getFirestore } from \"firebase/firestore\";\nimport { getStorage } from \"firebase/storage\";\n// Si usas otros servicios, impórtalos aquí (ej. getFirestore, getStorage)\n\n// Tus credenciales de configuración de Firebase\nconst firebaseConfig = {\n  apiKey: \"AIzaSyAF83FEXt1ek1qjSBZgtQEr_WSn4Pn6WLw\",\n  authDomain: \"paito-601ff.firebaseapp.com\",\n  projectId: \"paito-601ff\",\n  storageBucket: \"paito-601ff.appspot.com\",\n  messagingSenderId: \"739439353671\",\n  appId: \"1:739439353671:web:8fe8e7fb1a30930118f662\",\n  measurementId: \"G-EG7L8GJJ23\",\n};\n\n\n// Exporta los servicios que necesitas\nconst app = initializeApp(firebaseConfig);\nconst auth = getAuth(app);\nconst db = getFirestore(app);\nconst googleProvider = new GoogleAuthProvider();\n\n// EXPORTA LAS FUNCIONES Y OBJETOS\nexport { auth, db, googleProvider, signInWithEmailAndPassword, signInWithPopup };\n"
+        }
+    ]
+}
