@@ -130,7 +130,7 @@ export default function RegisterPage() {
       try {
         await emailjs.send(
           "service_bm0xbov",
-          "template_ixhkgam",
+          "template_vzfzz0m",
           {
             business_name: formData.businessName,
             owner_name: formData.ownerName,
