@@ -33,7 +33,7 @@ const HomePage = () => {
           <div className="flex items-center justify-between">
             <Link
               href="/"
-              className="flex items-center gap-2 text-slate-900 dark:text-white shrink-0"
+              className="flex items-center gap-2 text-slate-900 dark:text-white shrink-1"
             >
               <span className="text-lg sm:text-xl flex items-center gap-2 font-black uppercase tracking-widest italic">
                 Aura <Sparkles size={24} className="text-pink-500" /> Estética
