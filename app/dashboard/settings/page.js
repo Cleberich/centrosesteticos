@@ -1,12 +1,11 @@
 "use client";
 
 import React, { useState, useEffect, Suspense } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import {
   Save,
   ShieldCheck,
   Loader2,
-  Store,
   Camera,
   Calendar,
   ExternalLink,
@@ -20,7 +19,6 @@ import {
   MapPin,
   Navigation,
   Sparkles,
-  Flower2,
 } from "lucide-react";
 import { auth, db } from "@/services/firebase";
 import { onAuthStateChanged, signOut } from "firebase/auth";
@@ -31,6 +29,7 @@ function SettingsContent() {
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [isPaying, setIsPaying] = useState(null); // Estado para Mercado Pago
   const [esteticaData, setEsteticaData] = useState(null);
 
   // Estados de Seguridad
@@ -42,7 +41,7 @@ function SettingsContent() {
     {
       id: "Soft",
       name: "Soft",
-      price: 750,
+      price: 1,
       icon: <Zap size={20} />,
       features: ["1 Especialista", "50 citas/mes"],
     },
@@ -63,7 +62,7 @@ function SettingsContent() {
         "Citas ilimitadas",
         "Estadísticas",
         "Finanzas",
-        "Marketing ",
+        "Marketing",
       ],
     },
   ];
@@ -72,7 +71,6 @@ function SettingsContent() {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
         try {
-          // CAMBIO A COLECCIÓN centros_estetica
           const docRef = doc(db, "centros_estetica", user.uid);
           const docSnap = await getDoc(docRef);
           if (docSnap.exists()) {
@@ -89,6 +87,37 @@ function SettingsContent() {
     });
     return () => unsubscribe();
   }, [router]);
+
+  // --- LÓGICA DE MERCADO PAGO ---
+  const handleUpgrade = async (plan) => {
+    setIsPaying(plan.id);
+    try {
+      const response = await fetch("/api/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          planId: plan.id,
+          planName: `Plan Aura ${plan.name}`,
+          price: plan.price,
+          userId: auth.currentUser.uid,
+          businessName: esteticaData.businessName,
+          email: esteticaData.email,
+          collection: "centros_estetica", // Indispensable para el Webhook
+        }),
+      });
+
+      const data = await response.json();
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        alert("Error al generar el link de pago");
+      }
+    } catch (error) {
+      alert("Error de conexión con el servidor de pagos");
+    } finally {
+      setIsPaying(null);
+    }
+  };
 
   const handleSearchAddress = () => {
     if (!esteticaData?.direccion) {
@@ -166,8 +195,8 @@ function SettingsContent() {
 
   const daysLeft = () => {
     if (!esteticaData?.plan?.expiresAt) return 0;
-    const expires = esteticaData.plan.expiresAt.seconds
-      ? new Date(esteticaData.plan.expiresAt.seconds * 1000)
+    const expires = esteticaData.plan.expiresAt.toDate
+      ? esteticaData.plan.expiresAt.toDate()
       : new Date(esteticaData.plan.expiresAt);
     const diff = expires - new Date();
     return Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
@@ -181,7 +210,7 @@ function SettingsContent() {
     );
 
   return (
-    <div className="min-h-screen bg-[#FDF8FA] dark:bg-slate-950 p-6 md:p-12 pb-32 font-sans transition-colors overflow-y-auto">
+    <div className="min-h-screen bg-[#FDF8FA] dark:bg-slate-950 p-6 md:p-12 pb-32 font-sans transition-colors overflow-y-auto text-slate-900">
       <div className="max-w-5xl mx-auto space-y-10">
         <header className="flex justify-between items-end">
           <div>
@@ -200,7 +229,7 @@ function SettingsContent() {
           </button>
         </header>
 
-        {/* LOGO */}
+        {/* SECCIÓN LOGO */}
         <section className="flex flex-col md:flex-row items-center gap-8 bg-white dark:bg-slate-900 p-8 rounded-[3rem] border border-pink-50 dark:border-slate-800 shadow-sm">
           <div className="relative">
             <div className="size-32 rounded-[2.5rem] overflow-hidden bg-pink-50 dark:bg-slate-800 border-4 border-white shadow-xl">
@@ -208,6 +237,7 @@ function SettingsContent() {
                 <img
                   src={esteticaData.logo}
                   className="w-full h-full object-cover"
+                  alt="Logo"
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center text-pink-200">
@@ -225,7 +255,7 @@ function SettingsContent() {
               />
             </label>
           </div>
-          <div className="text-center md:text-left">
+          <div>
             <h3 className="text-xl font-black dark:text-white uppercase tracking-tight">
               Imagen de Marca
             </h3>
@@ -242,9 +272,6 @@ function SettingsContent() {
               <h3 className="flex items-center gap-2 font-black uppercase text-xs text-pink-500 tracking-widest">
                 <ShieldCheck size={18} /> Privacidad de Finanzas
               </h3>
-              <p className="text-[10px] text-slate-400 font-bold uppercase mt-1">
-                Protege la caja de miradas indiscretas
-              </p>
             </div>
             <div
               onClick={handleTogglePinProtection}
@@ -257,36 +284,21 @@ function SettingsContent() {
               <div className="size-6 bg-white rounded-full shadow-md" />
             </div>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
-            <div className="space-y-4 text-center">
-              {esteticaData?.useAccountingPin ? (
-                <input
-                  type="password"
-                  maxLength={4}
-                  placeholder="NUEVO PIN"
-                  value={esteticaData?.adminPin || ""}
-                  onChange={(e) =>
-                    setEsteticaData({
-                      ...esteticaData,
-                      adminPin: e.target.value.replace(/\D/g, ""),
-                    })
-                  }
-                  className="w-full bg-pink-50/50 dark:bg-slate-800 border-2 border-dashed border-pink-500/30 rounded-2xl py-5 px-6 text-center text-2xl font-black tracking-[.5em] text-pink-600 outline-none"
-                />
-              ) : (
-                <div className="p-6 bg-slate-50 dark:bg-slate-800 rounded-2xl border-2 border-dashed border-slate-200">
-                  <Unlock className="mx-auto text-slate-300 mb-2" />
-                  <p className="text-[10px] font-black uppercase text-slate-400">
-                    Sin PIN de seguridad
-                  </p>
-                </div>
-              )}
-            </div>
-            <p className="text-[10px] text-slate-400 font-bold leading-relaxed uppercase bg-pink-50/30 dark:bg-slate-800/50 p-6 rounded-3xl border border-pink-50">
-              Activa el PIN para que solo tú puedas ver los reportes de ingresos
-              y contabilidad del centro.
-            </p>
-          </div>
+          {esteticaData?.useAccountingPin && (
+            <input
+              type="password"
+              maxLength={4}
+              placeholder="NUEVO PIN"
+              value={esteticaData?.adminPin || ""}
+              onChange={(e) =>
+                setEsteticaData({
+                  ...esteticaData,
+                  adminPin: e.target.value.replace(/\D/g, ""),
+                })
+              }
+              className="w-full max-w-xs bg-pink-50/50 dark:bg-slate-800 border-2 border-dashed border-pink-500/30 rounded-2xl py-4 px-6 text-center text-2xl font-black tracking-[.5em] text-pink-600 outline-none"
+            />
+          )}
         </section>
 
         {/* LINK AGENDA */}
@@ -298,40 +310,25 @@ function SettingsContent() {
             <div className="flex-1 bg-pink-50/50 dark:bg-slate-950 p-4 rounded-2xl font-bold text-xs truncate border border-pink-100 text-pink-600">
               {`https://aura-estetica.vercel.app/reserva/${auth.currentUser?.uid}`}
             </div>
-            <div className="flex flex-wrap gap-2">
-              <button
-                type="button"
-                onClick={() => {
-                  navigator.clipboard.writeText(
-                    `https://aura-estetica.vercel.app/reserva/${auth.currentUser?.uid}`
-                  );
-                  alert("Link copiado");
-                }}
-                className="flex-1 md:flex-none bg-slate-900 text-white px-8 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest"
-              >
-                Copiar
-              </button>
-              <button
-                type="button"
-                onClick={() =>
-                  window.open(
-                    `https://aura-estetica.vercel.app/reserva/${auth.currentUser?.uid}`,
-                    "_blank"
-                  )
-                }
-                className="flex items-center gap-2 bg-pink-500 text-white px-8 py-4 rounded-2xl font-black text-[10px] uppercase shadow-lg shadow-pink-500/20"
-              >
-                <ExternalLink size={16} /> Ver Vista
-              </button>
-            </div>
+            <button
+              onClick={() => {
+                navigator.clipboard.writeText(
+                  `https://aura-estetica.vercel.app/reserva/${auth.currentUser?.uid}`
+                );
+                alert("Copiado");
+              }}
+              className="bg-slate-900 text-white px-8 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest"
+            >
+              Copiar
+            </button>
           </div>
         </section>
 
-        {/* DATOS COMERCIALES */}
+        {/* FORMULARIO DATOS */}
         <form onSubmit={handleSave} className="space-y-6">
           <section className="bg-white dark:bg-slate-900 p-8 rounded-[3rem] border border-pink-50 dark:border-slate-800 shadow-sm grid grid-cols-1 md:grid-cols-2 gap-8">
             <div className="space-y-3">
-              <label className="text-[10px] font-black uppercase text-slate-400 ml-2 tracking-widest">
+              <label className="text-[10px] font-black uppercase  text-slate-400 ml-2">
                 Nombre del Centro
               </label>
               <input
@@ -342,22 +339,22 @@ function SettingsContent() {
                     businessName: e.target.value,
                   })
                 }
-                className="w-full bg-slate-50 dark:bg-slate-800 p-4 rounded-2xl font-bold dark:text-white outline-none border border-slate-100 focus:border-pink-500 transition-colors"
+                className="w-full bg-slate-50 dark:bg-slate-800 p-4 rounded-2xl font-bold border border-slate-100 outline-none focus:border-pink-500 placeholder:text-slate-550 dark:placeholder:text-white text-slate-950 dark:text-white"
               />
             </div>
             <div className="space-y-3">
-              <label className="text-[10px] font-black uppercase text-slate-400 ml-2 tracking-widest">
-                WhatsApp de Contacto
+              <label className="text-[10px] font-black uppercase text-slate-400 ml-2">
+                WhatsApp
               </label>
               <input
+                placeholder="09x xxx xxx"
                 value={esteticaData?.telefono || ""}
                 onChange={(e) =>
                   setEsteticaData({ ...esteticaData, telefono: e.target.value })
                 }
-                className="w-full bg-slate-50 dark:bg-slate-800 p-4 rounded-2xl font-bold dark:text-white outline-none border border-slate-100 focus:border-pink-500 transition-colors"
+                className="w-full bg-slate-50 dark:bg-slate-800 p-4 rounded-2xl font-bold border placeholder:text-slate-550 dark:placeholder:text-white text-slate-950 dark:text-white border-slate-100 outline-none focus:border-pink-500"
               />
             </div>
-
             <div className="md:col-span-2 space-y-3">
               <label className="text-[10px] font-black uppercase text-slate-400 ml-2 tracking-widest flex items-center gap-2">
                 <MapPin size={12} /> Dirección Física
@@ -372,27 +369,27 @@ function SettingsContent() {
                       direccion: e.target.value,
                     })
                   }
-                  className="flex-1 bg-slate-50 dark:bg-slate-800 p-4 rounded-2xl font-bold dark:text-white outline-none border border-slate-100"
+                  className="flex-1 bg-slate-50  placeholder:text-slate-550 dark:placeholder:text-white text-slate-950 dark:text-white dark:bg-slate-800 p-4 rounded-2xl font-bold outline-none border border-slate-100 focus:border-pink-500"
                 />
                 <button
                   type="button"
                   onClick={handleSearchAddress}
-                  className="px-6 bg-slate-900 text-white rounded-2xl font-black text-[10px] uppercase"
+                  className="px-6 bg-slate-900 dark:bg-pink-600 text-white rounded-2xl font-black text-[10px] uppercase"
                 >
-                  Ubicación
+                  Ver Mapa
                 </button>
               </div>
             </div>
           </section>
 
-          {/* PLANES */}
+          {/* PLANES MERCADO PAGO */}
           <section className="space-y-6">
             <div className="flex justify-between items-center px-4">
               <h3 className="font-black uppercase text-xs text-slate-400 tracking-[0.3em]">
                 Suscripción Aura
               </h3>
               <div
-                className={`px-5 py-2 rounded-full text-[10px] font-black uppercase tracking-widest border ${
+                className={`px-5 py-2 rounded-full text-[10px] font-black uppercase border ${
                   daysLeft() > 0
                     ? "bg-emerald-50 text-emerald-600 border-emerald-100"
                     : "bg-rose-50 text-rose-600 border-rose-100"
@@ -414,9 +411,7 @@ function SettingsContent() {
                     }`}
                   >
                     <div className="mb-4 text-pink-500">{p.icon}</div>
-                    <h4 className="font-black dark:text-white uppercase tracking-tighter italic">
-                      {p.name}
-                    </h4>
+                    <h4 className="font-black uppercase italic">{p.name}</h4>
                     <p className="text-2xl font-black text-pink-500 mb-4">
                       ${p.price}
                       <span className="text-[10px] text-slate-400 ml-1">
@@ -432,15 +427,21 @@ function SettingsContent() {
                       ))}
                     </ul>
                     {isCurrent ? (
-                      <div className="text-center py-4 bg-emerald-500 text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.2em]">
-                        Suscripción Activa
+                      <div className="text-center py-4 bg-emerald-500 text-white rounded-2xl text-[10px] font-black uppercase">
+                        Activo
                       </div>
                     ) : (
                       <button
                         type="button"
-                        className="w-full py-4 bg-slate-900 dark:bg-pink-300 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-pink-600 transition-colors dark:text-slate-950"
+                        disabled={isPaying !== null}
+                        onClick={() => handleUpgrade(p)}
+                        className="w-full py-4 bg-slate-900 dark:bg-pink-500 text-white rounded-2xl font-black uppercase text-[10px] flex items-center justify-center gap-2"
                       >
-                        Solicitar Plan
+                        {isPaying === p.id ? (
+                          <Loader2 className="animate-spin" size={16} />
+                        ) : (
+                          "Solicitar Plan"
+                        )}
                       </button>
                     )}
                   </div>
@@ -451,7 +452,7 @@ function SettingsContent() {
 
           <button
             type="submit"
-            className="fixed bottom-8 right-8 bg-pink-500 text-white px-10 py-5 rounded-full font-black uppercase tracking-[0.2em] text-xs shadow-2xl z-50 flex items-center gap-3 hover:scale-105 transition-all shadow-pink-500/30"
+            className="fixed bottom-8 right-8 bg-pink-500 text-white px-10 py-5 rounded-full font-black uppercase text-xs shadow-2xl z-50 flex items-center gap-3 hover:scale-105 transition-all"
           >
             {saving ? (
               <Loader2 className="animate-spin" size={20} />
@@ -462,20 +463,20 @@ function SettingsContent() {
           </button>
         </form>
 
-        {/* MODAL VERIFICACIÓN */}
+        {/* MODAL VERIFICACIÓN PIN */}
         {isVerifyModalOpen && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md">
-            <div className="bg-white dark:bg-slate-900 w-full max-w-sm rounded-[3rem] shadow-2xl p-10 border border-slate-100 text-center">
+            <div className="bg-white dark:bg-slate-900 w-full max-w-sm rounded-[3rem] shadow-2xl p-10 text-center">
               <div className="size-16 bg-rose-50 rounded-full flex items-center justify-center mx-auto mb-6 text-rose-600">
                 <Lock size={32} />
               </div>
-              <h3 className="text-xl font-black uppercase dark:text-white italic">
-                Confirmar Identidad
+              <h3 className="text-xl font-black uppercase italic">
+                PIN de Seguridad
               </h3>
-              <p className="text-slate-400 text-[10px] font-bold uppercase mt-2 mb-8 tracking-widest">
-                Ingresa tu PIN actual de seguridad
-              </p>
-              <form onSubmit={confirmDeactivationAndSave} className="space-y-4">
+              <form
+                onSubmit={confirmDeactivationAndSave}
+                className="space-y-4 mt-6"
+              >
                 <input
                   type="password"
                   maxLength={4}
@@ -484,9 +485,9 @@ function SettingsContent() {
                   onChange={(e) =>
                     setVerificationPin(e.target.value.replace(/\D/g, ""))
                   }
-                  className="w-full bg-slate-50 rounded-2xl py-5 text-center text-2xl font-black tracking-[1em] outline-none border-2 border-transparent focus:border-rose-500 transition-all"
+                  className="w-full bg-slate-50 rounded-2xl py-5 text-center text-2xl font-black tracking-[1em] outline-none border-2 border-transparent focus:border-rose-500"
                 />
-                <div className="flex gap-3 mt-6">
+                <div className="flex gap-3">
                   <button
                     type="button"
                     onClick={() => setIsVerifyModalOpen(false)}
@@ -496,7 +497,7 @@ function SettingsContent() {
                   </button>
                   <button
                     type="submit"
-                    className="flex-1 py-4 bg-rose-600 text-white rounded-2xl font-black text-[10px] uppercase shadow-lg shadow-rose-600/20"
+                    className="flex-1 py-4 bg-rose-600 text-white rounded-2xl font-black text-[10px] uppercase"
                   >
                     Confirmar
                   </button>
