@@ -79,9 +79,9 @@ export async function POST(request) {
             // IMPORTANTE: Agregamos ?plan=${planId} para que tu web sepa qué plan compró al volver
             success: `https://centrosesteticos.vercel.app/dashboard/settings?plan=${planId}`,
             failure:
-              "https://barberias-aldia.vercel.app/dashboard/settings?status=failed",
+              "https://centrosesteticos.vercel.app/dashboard/settings?status=failed",
             pending:
-              "https://barberias-aldia.vercel.app/dashboard/settings?status=pending",
+              "https://centrosesteticos.vercel.app/dashboard/settings?status=pending",
           },
           auto_return: "approved",
           // Evita que los usuarios puedan pagar con medios que demoran (ej. Abitab)
