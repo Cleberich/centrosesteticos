@@ -146,9 +146,12 @@ export default function PricingPage() {
             </div>
 
             {/* Starter Plan */}
-            <div className="flex flex-col gap-8 rounded-[3rem] border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-10 shadow-sm hover:shadow-xl transition-all">
+            <div className="flex flex-col gap-8 rounded-[3rem] border-2 border-pink-500 bg-white dark:bg-slate-900 p-10 shadow-2xl relative lg:-translate-y-4 z-10">
+              <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-pink-500 text-white text-[9px] font-black px-6 py-2 rounded-full tracking-[0.2em] uppercase">
+                Recomendado
+              </div>
               <div>
-                  <h3 className="text-xl font-black uppercase italic mb-2 tracking-tight">
+                <h3 className="text-xl font-black uppercase italic mb-2 text-pink-500 tracking-tight">
                   Starter
                 </h3>
                 <p className="text-slate-500 dark:text-slate-400 text-xs font-medium leading-relaxed">
@@ -195,12 +198,9 @@ export default function PricingPage() {
             </div>
 
             {/* Profesional Plan */}
-            <div className="flex flex-col gap-8 rounded-[3rem] border-2 border-pink-500 bg-white dark:bg-slate-900 p-10 shadow-2xl relative lg:-translate-y-4 z-10">
-              <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-pink-500 text-white text-[9px] font-black px-6 py-2 rounded-full tracking-[0.2em] uppercase">
-                Más Elegido
-              </div>
+            <div className="flex flex-col gap-8 rounded-[3rem] border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-10 shadow-sm hover:shadow-xl transition-all">
               <div>
-                <h3 className="text-xl font-black uppercase italic mb-2 text-pink-500 tracking-tight">
+                <h3 className="text-xl font-black uppercase italic mb-2 tracking-tight">
                   Profesional
                 </h3>
                 <p className="text-slate-500 dark:text-slate-400 text-xs font-medium leading-relaxed">

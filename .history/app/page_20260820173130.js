@@ -1194,6 +1194,7 @@ export default function LandingEsteticaIntegral() {
               {
                 name: "Starter",
                 price: "$1,160",
+                popular: true,
                 features: [
                   "1 Especialista",
                   "90 Citas",
@@ -1205,7 +1206,6 @@ export default function LandingEsteticaIntegral() {
               {
                 name: "Profesional",
                 price: "$1,960",
-                popular: true,
                 features: [
                   "3 Especialistas",
                   "250 Citas",

@@ -398,7 +398,7 @@ export default function SpecialistsByutiePage() {
   const [specialists, setSpecialists] = useState([]);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
-  const [plan, setPlan] = useState("Inicial");
+  const [plan, setPlan] = useState("Soft");
   const [searchTerm, setSearchTerm] = useState("");
   const fileInputRef = useRef(null);
 
@@ -429,7 +429,7 @@ export default function SpecialistsByutiePage() {
           if (docSnap.exists()) {
             const data = docSnap.data();
             setSpecialists(data.specialists || []);
-            setPlan(data.plan?.type || "Inicial");
+            setPlan(data.plan?.type || "Soft");
           }
         } catch (error) {
           console.error("Error al cargar:", error);

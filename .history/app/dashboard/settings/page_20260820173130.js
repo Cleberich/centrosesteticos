@@ -586,7 +586,7 @@ function SettingsContent() {
     {
       id: "Starter",
       name: "Starter",
-      price: 1,
+      price: 1160,
       icon: <Star size={20} className="text-emerald-500" />,
       features: [
         "1 Especialista",
