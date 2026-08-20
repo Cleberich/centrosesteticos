@@ -120,9 +120,6 @@ export async function syncSubscription(subscription) {
     const subscriptionPrice = Number(
       subscription.auto_recurring?.transaction_amount,
     );
-    const nextPaymentDate =
-      toDate(subscription.next_payment_date) ||
-      new Date(Date.now() + 30 * DAY_IN_MS);
     update["plan.pendingSubscriptionId"] = FieldValue.delete();
     update["plan.pendingSubscriptionStatus"] = FieldValue.delete();
     update["plan.pendingSubscriptionPlan"] = FieldValue.delete();
@@ -132,8 +129,6 @@ export async function syncSubscription(subscription) {
     if (subscriptionPrice > 0) update["plan.price"] = subscriptionPrice;
     update["plan.status"] = "active";
     update["plan.paymentStatus"] = "pending_first_payment";
-    update["plan.nextPayment"] = Timestamp.fromDate(nextPaymentDate);
-    update["plan.expiresAt"] = Timestamp.fromDate(nextPaymentDate);
   }
 
   await getAdminDb().collection("centros_estetica").doc(userId).update(update);
