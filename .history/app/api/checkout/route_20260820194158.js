@@ -56,11 +56,10 @@ import { getAdminDb } from "@/services/firebase/admin";
 
 export async function POST(request) {
   try {
-    const { planId, planName, price, userId, email } = await request.json();
+    const { planId, planName, price, userId } = await request.json();
     const accessToken = process.env.MP_ACCESS_TOKEN?.trim();
-    const appUrl = (
-      process.env.NEXT_PUBLIC_APP_URL || "https://centros-esteticos.vercel.app"
-    ).replace(/\/$/, "");
+    const appUrl =
+      process.env.NEXT_PUBLIC_APP_URL || "https://centros-esteticos.vercel.app";
 
     if (!accessToken) {
       console.error("MP_ACCESS_TOKEN no está configurado");
@@ -74,7 +73,6 @@ export async function POST(request) {
       !planId ||
       !planName ||
       !userId ||
-      !email ||
       !Number.isFinite(Number(price)) ||
       Number(price) <= 0
     ) {
@@ -106,9 +104,11 @@ export async function POST(request) {
           },
           notification_url: `${appUrl}/api/webhooks/mercadopago`,
           back_urls: {
-            success: `${appUrl}/dashboard/settings?payment_status=success`,
-            failure: `${appUrl}/dashboard/settings?payment_status=failed`,
-            pending: `${appUrl}/dashboard/settings?payment_status=pending`,
+            success: "https://centros-esteticos.vercel.app/dashboard/settings?payment_status=success",
+            failure:
+              "https://centros-esteticos.vercel.app/dashboard/settings?payment_status=failed",
+            pending:
+              "https://centros-esteticos.vercel.app/dashboard/settings?payment_status=pending",
           },
         }),
       },

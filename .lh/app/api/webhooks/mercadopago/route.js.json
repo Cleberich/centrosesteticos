@@ -1,0 +1,18 @@
+{
+    "sourceFile": "app/api/webhooks/mercadopago/route.js",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 0,
+            "patches": [
+                {
+                    "date": 1787265981379,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                }
+            ],
+            "date": 1787265981379,
+            "name": "Commit-0",
+            "content": "import { NextResponse } from \"next/server\";\nimport {\n  confirmPayment,\n  syncSubscription,\n} from \"@/services/mercadopago/confirmPayment\";\n\nconst getPaymentId = (request, body) =>\n  body?.data?.id || body?.id || new URL(request.url).searchParams.get(\"data.id\");\n\nexport async function POST(request) {\n  try {\n    const body = await request.json().catch(() => ({}));\n    const paymentId = getPaymentId(request, body);\n    const accessToken = process.env.MP_ACCESS_TOKEN?.trim();\n\n    if (!paymentId || !accessToken) {\n      return NextResponse.json({ received: true });\n    }\n\n    const notificationType = body.type || body.topic;\n    if (notificationType === \"subscription_preapproval\") {\n      const subscriptionResponse = await fetch(\n        `https://api.mercadopago.com/preapproval/${encodeURIComponent(paymentId)}`,\n        { headers: { Authorization: `Bearer ${accessToken}` } },\n      );\n      const subscription = await subscriptionResponse.json();\n\n      if (!subscriptionResponse.ok) {\n        return NextResponse.json(\n          { error: \"No se pudo consultar la suscripción\" },\n          { status: 502 },\n        );\n      }\n\n      const result = await syncSubscription(subscription);\n      if (!result.ok) {\n        return NextResponse.json({ error: result.error }, { status: result.status });\n      }\n      return NextResponse.json({ received: true, subscription: true });\n    }\n\n    const paymentResponse = await fetch(\n      `https://api.mercadopago.com/v1/payments/${paymentId}`,\n      { headers: { Authorization: `Bearer ${accessToken}` } }\n    );\n    const payment = await paymentResponse.json();\n\n    if (!paymentResponse.ok) {\n      console.error(\"No se pudo consultar el pago de Mercado Pago\", payment);\n      return NextResponse.json({ error: \"No se pudo consultar el pago\" }, { status: 502 });\n    }\n\n    if (payment.status !== \"approved\") {\n      return NextResponse.json({ received: true, status: payment.status });\n    }\n\n    const result = await confirmPayment(payment);\n    if (!result.ok) {\n      console.error(result.error, paymentId);\n      return NextResponse.json({ error: result.error }, { status: result.status });\n    }\n\n    return NextResponse.json({ received: true, duplicate: result.duplicate });\n  } catch (error) {\n    console.error(\"Error en webhook de Mercado Pago\", error);\n    return NextResponse.json({ error: \"Error interno\" }, { status: 500 });\n  }\n}\n\nexport async function GET() {\n  return NextResponse.json({ ok: true });\n}"
+        }
+    ]
+}

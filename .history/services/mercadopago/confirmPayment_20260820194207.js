@@ -100,27 +100,3 @@ export async function confirmPayment(payment) {
 export function getPaymentUserId(payment) {
   return getPlanData(payment).userId;
 }
-
-export async function syncSubscription(subscription) {
-  const { userId, planId } = getPlanData(subscription);
-  if (!userId) {
-    return { ok: false, status: 422, error: "Suscripción sin usuario asociado" };
-  }
-
-  const update = {
-    "plan.subscriptionId": String(subscription.id),
-    "plan.subscriptionStatus": subscription.status || "pending",
-  };
-
-  if (subscription.status === "authorized") {
-    update["plan.pendingSubscriptionId"] = FieldValue.delete();
-    update["plan.pendingSubscriptionStatus"] = FieldValue.delete();
-    update["plan.pendingSubscriptionPlan"] = FieldValue.delete();
-    update["plan.pendingSubscriptionPrice"] = FieldValue.delete();
-    update["plan.pendingSubscriptionCreatedAt"] = FieldValue.delete();
-    if (planId) update["plan.type"] = planId;
-  }
-
-  await getAdminDb().collection("centros_estetica").doc(userId).update(update);
-  return { ok: true, userId };
-}

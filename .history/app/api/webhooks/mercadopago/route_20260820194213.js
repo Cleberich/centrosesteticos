@@ -5,9 +5,7 @@ import {
 } from "@/services/mercadopago/confirmPayment";
 
 const getPaymentId = (request, body) =>
-  body?.data?.id ||
-  body?.id ||
-  new URL(request.url).searchParams.get("data.id");
+  body?.data?.id || body?.id || new URL(request.url).searchParams.get("data.id");
 
 export async function POST(request) {
   try {
@@ -36,26 +34,20 @@ export async function POST(request) {
 
       const result = await syncSubscription(subscription);
       if (!result.ok) {
-        return NextResponse.json(
-          { error: result.error },
-          { status: result.status },
-        );
+        return NextResponse.json({ error: result.error }, { status: result.status });
       }
       return NextResponse.json({ received: true, subscription: true });
     }
 
     const paymentResponse = await fetch(
       `https://api.mercadopago.com/v1/payments/${paymentId}`,
-      { headers: { Authorization: `Bearer ${accessToken}` } },
+      { headers: { Authorization: `Bearer ${accessToken}` } }
     );
     const payment = await paymentResponse.json();
 
     if (!paymentResponse.ok) {
       console.error("No se pudo consultar el pago de Mercado Pago", payment);
-      return NextResponse.json(
-        { error: "No se pudo consultar el pago" },
-        { status: 502 },
-      );
+      return NextResponse.json({ error: "No se pudo consultar el pago" }, { status: 502 });
     }
 
     if (payment.status !== "approved") {
@@ -65,10 +57,7 @@ export async function POST(request) {
     const result = await confirmPayment(payment);
     if (!result.ok) {
       console.error(result.error, paymentId);
-      return NextResponse.json(
-        { error: result.error },
-        { status: result.status },
-      );
+      return NextResponse.json({ error: result.error }, { status: result.status });
     }
 
     return NextResponse.json({ received: true, duplicate: result.duplicate });
