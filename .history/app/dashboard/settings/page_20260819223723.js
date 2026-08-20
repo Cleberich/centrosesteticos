@@ -966,7 +966,7 @@ function SettingsContent() {
                 type="button"
                 onClick={() => {
                   navigator.clipboard.writeText(
-                    `https://centros-esteticos.vercel.app/reserva/${auth.currentUser?.uid}`,
+                    `https://centro-estetica.vercel.app/reserva/${auth.currentUser?.uid}`,
                   );
                   alert("Enlace copiado");
                 }}
