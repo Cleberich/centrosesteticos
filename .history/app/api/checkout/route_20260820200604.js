@@ -144,7 +144,6 @@ export async function POST(request) {
         "plan.pendingSubscriptionStatus": data.status || "pending",
         "plan.pendingSubscriptionPlan": planId,
         "plan.pendingSubscriptionPrice": Number(price),
-        "plan.pendingPayerEmail": payerEmail,
         "plan.pendingSubscriptionCreatedAt": Timestamp.now(),
       });
 

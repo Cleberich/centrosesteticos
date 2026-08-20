@@ -566,7 +566,6 @@ function SettingsContent() {
   const [saving, setSaving] = useState(false);
   const [isPaying, setIsPaying] = useState(null);
   const [esteticaData, setEsteticaData] = useState(null);
-  const [mercadoPagoEmail, setMercadoPagoEmail] = useState("");
 
   // Estados de Seguridad
   const [isVerifyModalOpen, setIsVerifyModalOpen] = useState(false);
@@ -692,12 +691,6 @@ function SettingsContent() {
   }, [router, searchParams]);
 
   const handleUpgrade = async (plan) => {
-    const payerEmail = mercadoPagoEmail.trim().toLowerCase();
-    if (!payerEmail || !/^\S+@\S+\.\S+$/.test(payerEmail)) {
-      alert("Ingresa el email de la cuenta que usas en Mercado Pago");
-      return;
-    }
-
     setIsPaying(plan.id);
     try {
       const response = await fetch("/api/checkout", {
@@ -709,7 +702,7 @@ function SettingsContent() {
           price: plan.price,
           userId: auth.currentUser.uid,
           businessName: esteticaData.businessName,
-          email: payerEmail,
+          email: auth.currentUser.email || esteticaData.email,
           collection: "centros_estetica",
         }),
       });
@@ -1066,26 +1059,6 @@ function SettingsContent() {
               <span className="px-4 py-1.5 bg-emerald-100 text-emerald-700 rounded-full text-xs font-bold">
                 {daysLeft()} Días Restantes
               </span>
-            </div>
-
-            <div className="bg-white p-6 rounded-[2rem] border border-rose-100/60 shadow-sm space-y-2">
-              <label
-                htmlFor="mercado-pago-email"
-                className="text-xs font-bold text-slate-700"
-              >
-                Email de tu cuenta de Mercado Pago
-              </label>
-              <p className="text-xs text-slate-400">
-                Puede ser diferente al email con el que te registraste en la aplicación.
-              </p>
-              <input
-                id="mercado-pago-email"
-                type="email"
-                value={mercadoPagoEmail}
-                onChange={(event) => setMercadoPagoEmail(event.target.value)}
-                placeholder="tu-email@mercadopago.com"
-                className="w-full max-w-xl bg-slate-50 border border-slate-200 p-3.5 rounded-2xl text-xs font-semibold text-slate-800 outline-none focus:border-emerald-400 focus:bg-white transition-all"
-              />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
