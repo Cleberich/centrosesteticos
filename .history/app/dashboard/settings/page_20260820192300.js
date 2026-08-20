@@ -587,7 +587,7 @@ function SettingsContent() {
     {
       id: "Starter",
       name: "Starter",
-      price: 2,
+      price: 1450,
       icon: <Star size={20} className="text-emerald-500" />,
       features: [
         "1 Especialista",
@@ -1118,12 +1118,7 @@ function SettingsContent() {
                   Último pago
                 </p>
                 <p className="text-lg font-extrabold text-slate-800 mt-1">
-                  $
-                  {Number(
-                    esteticaData?.plan?.lastPaymentAmount ||
-                      esteticaData?.plan?.price ||
-                      0,
-                  ).toLocaleString("es-UY")}
+                  ${Number(esteticaData?.plan?.lastPaymentAmount || esteticaData?.plan?.price || 0).toLocaleString("es-UY")}
                 </p>
                 <p className="text-xs text-slate-500">
                   {formatPaymentDate(esteticaData?.plan?.lastPayment)}
@@ -1177,20 +1172,14 @@ function SettingsContent() {
                           {payment.planName || payment.planType || "Plan"}
                         </td>
                         <td className="py-3 pr-4 font-semibold text-slate-700">
-                          $
-                          {(Number(payment.amount) || 0).toLocaleString(
-                            "es-UY",
-                          )}{" "}
-                          {payment.currency || "UYU"}
+                          ${(Number(payment.amount) || 0).toLocaleString("es-UY")} {payment.currency || "UYU"}
                         </td>
                         <td className="py-3 pr-4 text-slate-600">
                           {formatPaymentDate(payment.expiresAt)}
                         </td>
                         <td className="py-3">
                           <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-[10px] font-bold text-emerald-700">
-                            {payment.status === "approved"
-                              ? "Aprobado"
-                              : payment.status}
+                            {payment.status === "approved" ? "Aprobado" : payment.status}
                           </span>
                         </td>
                       </tr>

@@ -546,7 +546,6 @@ import {
   Sparkle,
   Eye,
   CheckCircle2,
-  History,
   LayoutDashboard,
   Users,
   UserCheck,
@@ -587,7 +586,7 @@ function SettingsContent() {
     {
       id: "Starter",
       name: "Starter",
-      price: 2,
+      price: 1450,
       icon: <Star size={20} className="text-emerald-500" />,
       features: [
         "1 Especialista",
@@ -773,29 +772,6 @@ function SettingsContent() {
     const diff = expires - new Date();
     return Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
   };
-
-  const formatPaymentDate = (value) => {
-    if (!value) return "Sin registrar";
-    const date = value.toDate
-      ? value.toDate()
-      : value.seconds
-        ? new Date(value.seconds * 1000)
-        : new Date(value);
-    if (Number.isNaN(date.getTime())) return "Sin registrar";
-    return date.toLocaleDateString("es-UY", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-    });
-  };
-
-  const paymentHistory = [...(esteticaData?.paymentHistory || [])].sort(
-    (first, second) => {
-      const firstDate = first.date?.seconds || 0;
-      const secondDate = second.date?.seconds || 0;
-      return secondDate - firstDate;
-    },
-  );
 
   if (loading)
     return (
@@ -1096,113 +1072,6 @@ function SettingsContent() {
                 );
               })}
             </div>
-          </section>
-
-          {/* HISTORIAL DE PAGOS */}
-          <section className="bg-white p-8 rounded-[2rem] border border-rose-100/60 shadow-sm space-y-6">
-            <div className="flex items-center gap-2">
-              <History size={18} className="text-emerald-500" />
-              <div>
-                <h3 className="text-sm font-bold text-slate-800">
-                  Información de pago
-                </h3>
-                <p className="text-xs text-slate-400 mt-1">
-                  Pagos confirmados por Mercado Pago y fecha de vencimiento.
-                </p>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <div className="bg-slate-50 rounded-2xl p-4">
-                <p className="text-[10px] font-bold uppercase text-slate-400">
-                  Último pago
-                </p>
-                <p className="text-lg font-extrabold text-slate-800 mt-1">
-                  $
-                  {Number(
-                    esteticaData?.plan?.lastPaymentAmount ||
-                      esteticaData?.plan?.price ||
-                      0,
-                  ).toLocaleString("es-UY")}
-                </p>
-                <p className="text-xs text-slate-500">
-                  {formatPaymentDate(esteticaData?.plan?.lastPayment)}
-                </p>
-              </div>
-              <div className="bg-slate-50 rounded-2xl p-4">
-                <p className="text-[10px] font-bold uppercase text-slate-400">
-                  Vencimiento
-                </p>
-                <p className="text-lg font-extrabold text-slate-800 mt-1">
-                  {formatPaymentDate(esteticaData?.plan?.expiresAt)}
-                </p>
-                <p className="text-xs text-slate-500">
-                  {daysLeft()} días restantes
-                </p>
-              </div>
-              <div className="bg-slate-50 rounded-2xl p-4">
-                <p className="text-[10px] font-bold uppercase text-slate-400">
-                  Medio de pago
-                </p>
-                <p className="text-lg font-extrabold text-slate-800 mt-1 capitalize">
-                  {esteticaData?.plan?.lastPaymentMethod || "Sin registrar"}
-                </p>
-                <p className="text-xs text-slate-500">
-                  {esteticaData?.plan?.lastPaymentStatus === "approved"
-                    ? "Pago aprobado"
-                    : esteticaData?.plan?.lastPaymentStatus || "Sin registrar"}
-                </p>
-              </div>
-            </div>
-
-            {paymentHistory.length > 0 ? (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs">
-                  <thead className="border-b border-slate-100 text-[10px] uppercase text-slate-400">
-                    <tr>
-                      <th className="py-3 pr-4">Fecha</th>
-                      <th className="py-3 pr-4">Plan</th>
-                      <th className="py-3 pr-4">Importe</th>
-                      <th className="py-3 pr-4">Vence</th>
-                      <th className="py-3">Estado</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-50">
-                    {paymentHistory.map((payment) => (
-                      <tr key={payment.paymentId}>
-                        <td className="py-3 pr-4 text-slate-600">
-                          {formatPaymentDate(payment.date)}
-                        </td>
-                        <td className="py-3 pr-4 font-semibold text-slate-700">
-                          {payment.planName || payment.planType || "Plan"}
-                        </td>
-                        <td className="py-3 pr-4 font-semibold text-slate-700">
-                          $
-                          {(Number(payment.amount) || 0).toLocaleString(
-                            "es-UY",
-                          )}{" "}
-                          {payment.currency || "UYU"}
-                        </td>
-                        <td className="py-3 pr-4 text-slate-600">
-                          {formatPaymentDate(payment.expiresAt)}
-                        </td>
-                        <td className="py-3">
-                          <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-[10px] font-bold text-emerald-700">
-                            {payment.status === "approved"
-                              ? "Aprobado"
-                              : payment.status}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            ) : (
-              <p className="text-xs text-slate-400">
-                Todavía no hay pagos registrados.
-              </p>
-            )}
           </section>
 
           {/* BOTÓN FLOTANTE */}
