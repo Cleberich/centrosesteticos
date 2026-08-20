@@ -1,0 +1,26 @@
+{
+    "sourceFile": "app/layout.js",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 2,
+            "patches": [
+                {
+                    "date": 1766984953234,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1766985246525,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,21 +1,24 @@\n // app/layout.js\n-import { Manrope } from \"next/font/google\";\n-import \"./globals.css\";\n+import { Manrope } from 'next/font/google';\n+import './globals.css';\n \n const manrope = Manrope({\n-  subsets: [\"latin\"],\n-  variable: \"--font-manrope\",\n+  subsets: ['latin'],\n+  weight: ['400', '500', '700', '800'],\n+  variable: '--font-manrope',\n });\n \n export const metadata = {\n-  title: \"BarberManager - Gestión Profesional de Barberías\",\n-  description: \"Gestiona tu barbería como un profesional con BarberManager\",\n+  title: \"Registro de Barbería - BarberManager\",\n+  description: \"Registra tu barbería en la plataforma líder de gestión profesional.\",\n };\n \n export default function RootLayout({ children }) {\n   return (\n     <html lang=\"es\" className=\"light\">\n-      <body className={`${manrope.variable} font-sans`}>{children}</body>\n+      <body className={`${manrope.variable} font-sans bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-50 min-h-screen flex flex-col`}>\n+        {children}\n+      </body>\n     </html>\n   );\n-}\n+}\n\\ No newline at end of file\n"
+                },
+                {
+                    "date": 1766985395314,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,27 +1,24 @@\n // app/layout.js\n-import { Manrope } from \"next/font/google\";\n-import \"./globals.css\";\n+import { Manrope } from 'next/font/google';\n+import './globals.css';\n \n const manrope = Manrope({\n-  subsets: [\"latin\"],\n-  weight: [\"400\", \"500\", \"700\", \"800\"],\n-  variable: \"--font-manrope\",\n+  subsets: ['latin'],\n+  weight: ['400', '500', '700', '800'],\n+  variable: '--font-manrope',\n });\n \n export const metadata = {\n-  title: \"Registro de Barbería - BarberManager\",\n-  description:\n-    \"Registra tu barbería en la plataforma líder de gestión profesional.\",\n+  title: \"BarberApp - Planes de Membresía\",\n+  description: \"Elige el plan perfecto para tu barbería y escala tu negocio con herramientas profesionales.\",\n };\n \n export default function RootLayout({ children }) {\n   return (\n     <html lang=\"es\" className=\"light\">\n-      <body\n-        className={`${manrope.variable} font-sans bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-50 min-h-screen flex flex-col`}\n-      >\n+      <body className={`${manrope.variable} font-sans`}>\n         {children}\n       </body>\n     </html>\n   );\n-}\n+}\n\\ No newline at end of file\n"
+                }
+            ],
+            "date": 1766984953234,
+            "name": "Commit-0",
+            "content": "// app/layout.js\nimport { Manrope } from 'next/font/google';\nimport './globals.css';\n\nconst manrope = Manrope({\n  subsets: ['latin'],\n  variable: '--font-manrope',\n});\n\nexport const metadata = {\n  title: \"BarberManager - Gestión Profesional de Barberías\",\n  description: \"Gestiona tu barbería como un profesional con BarberManager\",\n};\n\nexport default function RootLayout({ children }) {\n  return (\n    <html lang=\"es\" className=\"light\">\n      <body className={`${manrope.variable} font-sans`}>\n        {children}\n      </body>\n    </html>\n  );\n}"
+        }
+    ]
+}

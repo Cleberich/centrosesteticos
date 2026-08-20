@@ -1,0 +1,22 @@
+{
+    "sourceFile": "app/globals.css",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 1,
+            "patches": [
+                {
+                    "date": 1766984973248,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1767146977840,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -29,5 +29,10 @@\n     'FILL' 0,\n     'wght' 400,\n     'GRAD' 0,\n     'opsz' 24;\n-}\n\\ No newline at end of file\n+}\n+input,\n+textarea,\n+select {\n+  font-size: 16px;\n+}\n"
+                }
+            ],
+            "date": 1766984973248,
+            "name": "Commit-0",
+            "content": "@import \"tailwindcss\";\n\n:root {\n  --background: #ffffff;\n  --foreground: #171717;\n}\n\n@theme inline {\n  --color-background: var(--background);\n  --color-foreground: var(--foreground);\n  --font-sans: var(--font-geist-sans);\n  --font-mono: var(--font-geist-mono);\n}\n\n@media (prefers-color-scheme: dark) {\n  :root {\n    --background: #0a0a0a;\n    --foreground: #ededed;\n  }\n}\n\nbody {\n  background: var(--background);\n  color: var(--foreground);\n  font-family: Arial, Helvetica, sans-serif;\n}\n.material-symbols-outlined {\n  font-variation-settings:\n    'FILL' 0,\n    'wght' 400,\n    'GRAD' 0,\n    'opsz' 24;\n}"
+        }
+    ]
+}

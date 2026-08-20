@@ -1,0 +1,1263 @@
+// "use client";
+// import React, { useState, useEffect, useMemo } from "react";
+// import {
+//   X,
+//   CheckCircle2,
+//   Loader2,
+//   Clock,
+//   Banknote,
+//   Smartphone,
+//   Receipt,
+//   CreditCard,
+//   Check,
+//   Trash2,
+//   Plus,
+//   AlertOctagon,
+//   Phone,
+//   Sparkles,
+//   Flower2,
+// } from "lucide-react";
+// import { auth, db } from "@/services/firebase";
+// import { onAuthStateChanged } from "firebase/auth";
+// import { doc, getDoc, updateDoc, arrayUnion } from "firebase/firestore";
+
+// const HOUR_HEIGHT = 95;
+// const START_HOUR = 8;
+// const DAYS = [
+//   "Lunes",
+//   "Martes",
+//   "Miércoles",
+//   "Jueves",
+//   "Viernes",
+//   "Sábado",
+//   "Domingo",
+// ];
+
+// const SPECIALIST_COLORS = [
+//   {
+//     bg: "bg-white",
+//     border: "border-slate-300",
+//     accent: "bg-pink-600",
+//     tab: "bg-pink-600",
+//   },
+//   {
+//     bg: "bg-white",
+//     border: "border-slate-300",
+//     accent: "bg-purple-600",
+//     tab: "bg-purple-600",
+//   },
+//   {
+//     bg: "bg-white",
+//     border: "border-slate-300",
+//     accent: "bg-indigo-600",
+//     tab: "bg-indigo-600",
+//   },
+//   {
+//     bg: "bg-white",
+//     border: "border-slate-300",
+//     accent: "bg-rose-600",
+//     tab: "bg-rose-600",
+//   },
+// ];
+
+// const PAYMENT_METHODS = [
+//   { id: "cash", name: "Efectivo", icon: <Banknote size={16} /> },
+//   { id: "transfer", name: "Transferencia", icon: <Receipt size={16} /> },
+//   { id: "mp", name: "Mercado Pago", icon: <Smartphone size={16} /> },
+//   { id: "pos", name: "POS / Tarjeta", icon: <CreditCard size={16} /> },
+// ];
+
+// export default function CalendarPage() {
+//   const [loading, setLoading] = useState(true);
+//   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+//   const [showPaymentSelector, setShowPaymentSelector] = useState(false);
+//   const [selectedMethod, setSelectedMethod] = useState("cash");
+//   const [user, setUser] = useState(null);
+//   const [team, setTeam] = useState([]);
+//   const [availableServices, setAvailableServices] = useState([]);
+//   const [appointments, setAppointments] = useState([]);
+//   const [viewFilter, setViewFilter] = useState("all");
+//   const [isInactive, setIsInactive] = useState(false);
+
+//   const [currentApp, setCurrentApp] = useState({
+//     id: null,
+//     customer: "",
+//     phone: "",
+//     specialist: "",
+//     start: "09:00",
+//     day: 0,
+//     status: "pending",
+//     selectedServiceIds: [], // <--- MUY IMPORTANTE ESTA LÍNEA
+//   });
+
+//   useEffect(() => {
+//     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+//       if (currentUser) {
+//         setUser(currentUser);
+//         const docRef = doc(db, "centros_estetica", currentUser.uid);
+//         const docSnap = await getDoc(docRef);
+//         if (docSnap.exists()) {
+//           const data = docSnap.data();
+//           setTeam(data.specialists || []);
+//           setAvailableServices(data.services || []);
+//           setAppointments(data.appointments || []);
+//           const expiresAt = data.plan?.expiresAt;
+//           const expiration = expiresAt?.toDate
+//             ? expiresAt.toDate()
+//             : expiresAt
+//               ? new Date(expiresAt)
+//               : null;
+//           setIsInactive(
+//             data.plan?.status === "inactive" ||
+//               data.plan?.status === "expired" ||
+//               (expiration && expiration <= new Date())
+//           );
+//         }
+//         setLoading(false);
+//       }
+//     });
+//     return () => unsubscribe();
+//   }, []);
+
+//   const specialistColorMap = useMemo(() => {
+//     const map = {};
+//     team.forEach(
+//       (s, i) => (map[s.name] = SPECIALIST_COLORS[i % SPECIALIST_COLORS.length])
+//     );
+//     return map;
+//   }, [team]);
+
+//   const filteredAppointments = useMemo(() => {
+//     if (viewFilter === "all") return appointments;
+//     return appointments.filter((app) => app.specialist === viewFilter);
+//   }, [appointments, viewFilter]);
+
+//   const { totalAmount, totalDuration } = useMemo(() => {
+//     if (!currentApp.selectedServiceIds?.length)
+//       return { totalAmount: 0, totalDuration: 0 };
+//     return currentApp.selectedServiceIds.reduce(
+//       (acc, id) => {
+//         const s = availableServices.find(
+//           (svc) => String(svc.id) === String(id)
+//         );
+//         return {
+//           totalAmount: acc.totalAmount + (Number(s?.price) || 0),
+//           totalDuration: acc.totalDuration + (Number(s?.time) || 60),
+//         };
+//       },
+//       { totalAmount: 0, totalDuration: 0 }
+//     );
+//   }, [currentApp.selectedServiceIds, availableServices]);
+
+//   const handleSave = async (e) => {
+//     e.preventDefault();
+//     if (!currentApp.customer) return alert("Nombre obligatorio");
+//     const today = new Date();
+//     const targetDate = new Date(today);
+//     targetDate.setDate(
+//       today.getDate() +
+//         (currentApp.day - (today.getDay() === 0 ? 6 : today.getDay() - 1))
+//     );
+
+//     const appData = {
+//       ...currentApp,
+//       id: currentApp.id || Math.random().toString(36).substring(2, 15),
+//       total: totalAmount,
+//       duration: totalDuration,
+//       date: targetDate.toLocaleDateString("sv-SE"),
+//       createdAt: currentApp.createdAt || new Date().toISOString(),
+//     };
+
+//     const newList = appointments.some(
+//       (a) => String(a.id) === String(currentApp.id)
+//     )
+//       ? appointments.map((a) =>
+//           String(a.id) === String(currentApp.id) ? appData : a
+//         )
+//       : [...appointments, appData];
+
+//     await updateDoc(doc(db, "centros_estetica", user.uid), {
+//       appointments: newList,
+//     });
+//     setAppointments(newList);
+//     setIsDrawerOpen(false);
+//   };
+
+//   const getTimeTop = (t) => {
+//     const [h, m] = t.split(":").map(Number);
+//     return (h + m / 60 - START_HOUR) * HOUR_HEIGHT;
+//   };
+
+//   if (loading)
+//     return (
+//       <div className="h-screen flex items-center justify-center bg-white">
+//         <Loader2 className="animate-spin text-pink-500" size={40} />
+//       </div>
+//     );
+
+//   return (
+//     <div className="flex flex-col h-full bg-white dark:bg-slate-900  font-sans text-slate-900">
+//       {/* HEADER */}
+//       <header className="px-8 py-5 border-b-2 border-slate-100 sticky top-0 bg-white dark:bg-slate-900  z-40">
+//         <div className="flex items-center justify-between mb-4">
+//           <h1 className="text-2xl dark:text-white text-slate-900 font-black uppercase  tracking-tighter">
+//             Agenda <span className="text-pink-600">Web</span>
+//           </h1>
+//           <button
+//             onClick={() => {
+//               setCurrentApp({
+//                 id: null,
+//                 customer: "",
+//                 phone: "",
+//                 specialist: team[0]?.name || "",
+//                 start: "09:00",
+//                 day: 0,
+//                 status: "pending",
+//                 selectedServiceIds: [],
+//               });
+//               setShowPaymentSelector(false);
+//               setIsDrawerOpen(true);
+//             }}
+//             className="dark:bg-pink-600 bg-slate-900 text-white px-6 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-lg"
+//           >
+//             + Nueva Cita
+//           </button>
+//         </div>
+//         <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+//           <button
+//             onClick={() => setViewFilter("all")}
+//             className={`px-5 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${
+//               viewFilter === "all"
+//                 ? "bg-pink-600 text-white"
+//                 : "bg-slate-100 text-slate-500"
+//             }`}
+//           >
+//             Todos
+//           </button>
+//           {team.map((s) => (
+//             <button
+//               key={s.id}
+//               onClick={() => setViewFilter(s.name)}
+//               className={`px-5 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${
+//                 viewFilter === s.name
+//                   ? `${specialistColorMap[s.name]?.tab} text-white`
+//                   : "bg-slate-100 text-slate-500"
+//               }`}
+//             >
+//               {s.name}
+//             </button>
+//           ))}
+//         </div>
+//       </header>
+
+//       {/* CALENDARIO */}
+//       <div className="flex-1 w-full overflow-auto bg-white dark:bg-slate-900 ">
+//         <div className="w-full h-full flex flex-col">
+//           <div className="flex border-b-2 border-slate-200 dark:border-slate-700 sticky top-0 z-20">
+//             <div className="w-20 border-r-2 border-slate-200 dark:border-slate-700" />
+//             <div className="flex-1 grid grid-cols-7 divide-x-2 divide-slate-100 dark:divide-slate-800 uppercase text-[11px] font-black text-slate-900">
+//               {DAYS.map((d) => (
+//                 <div
+//                   key={d}
+//                   className="py-4 text-center bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-300"
+//                 >
+//                   {d}
+//                 </div>
+//               ))}
+//             </div>
+//           </div>
+//           <div
+//             className="flex relative flex-1"
+//             style={{ height: 13 * HOUR_HEIGHT }}
+//           >
+//             <div className="w-20 border-r-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-[12px] font-black text-slate-400 text-center">
+//               {Array.from({ length: 13 }).map((_, i) => (
+//                 <div key={i} style={{ height: HOUR_HEIGHT }} className="pt-2">
+//                   {(i + START_HOUR).toString().padStart(2, "0")}:00
+//                 </div>
+//               ))}
+//             </div>
+//             <div className="flex-1 grid grid-cols-7 divide-x-2 divide-slate-200 relative  bg-white dark:bg-slate-800 ">
+//               {Array.from({ length: 13 * 7 }).map((_, idx) => (
+//                 <div
+//                   key={idx}
+//                   className="border-b border-slate-100 dark:border-slate-700"
+//                   style={{ height: HOUR_HEIGHT }}
+//                 />
+//               ))}
+//               {filteredAppointments.map((app) => {
+//                 const colors =
+//                   specialistColorMap[app.specialist] || SPECIALIST_COLORS[0];
+//                 return (
+//                   <div
+//                     key={app.id}
+//                     onClick={() => {
+//                       setCurrentApp(app);
+//                       setShowPaymentSelector(false);
+//                       setIsDrawerOpen(true);
+//                     }}
+//                     className={`absolute left-1 right-1 rounded-lg border-2 shadow-sm cursor-pointer z-10 overflow-hidden flex bg-white ${colors.border}`}
+//                     style={{
+//                       top: getTimeTop(app.start) + 2,
+//                       height:
+//                         ((Number(app.duration) || 60) / 60) * HOUR_HEIGHT - 4,
+//                       gridColumnStart: app.day + 1,
+//                       gridColumnEnd: app.day + 2,
+//                     }}
+//                   >
+//                     <div className={`w-1.5 shrink-0 ${colors.accent}`} />
+//                     <div className="p-2 overflow-hidden">
+//                       <p className="text-[11px] font-black uppercase text-slate-900 leading-tight truncate">
+//                         {app.customer}
+//                       </p>
+//                       <p className="text-[9px] font-bold text-slate-400 mt-0.5">
+//                         {app.start}hs • {app.duration}m
+//                       </p>
+//                     </div>
+//                   </div>
+//                 );
+//               })}
+//             </div>
+//           </div>
+//         </div>
+//       </div>
+
+//       {/* DRAWER */}
+//       {isDrawerOpen && (
+//         <div className="fixed inset-0 z-[100] flex justify-end">
+//           <div
+//             className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
+//             onClick={() => setIsDrawerOpen(false)}
+//           />
+//           <div className="relative w-full md:max-w-[480px] bg-white dark:bg-slate-900 h-full shadow-2xl flex flex-col p-8 animate-in slide-in-from-right duration-300">
+//             <div className="flex justify-between items-center mb-8">
+//               <h2 className="text-xl font-black uppercase text-slate-900 dark:text-slate-100">
+//                 {showPaymentSelector ? "Cobrar" : "Detalles"}{" "}
+//                 <span className="text-pink-600">Web</span>
+//               </h2>
+//               <button
+//                 onClick={() => setIsDrawerOpen(false)}
+//                 className="p-2 bg-slate-100 rounded-lg text-slate-500 hover:text-red-500 transition-all"
+//               >
+//                 <X size={20} />
+//               </button>
+//             </div>
+
+//             <div className="flex-1 overflow-y-auto pb-32">
+//               {!showPaymentSelector ? (
+//                 <form onSubmit={handleSave} className="space-y-6">
+//                   {currentApp.id && currentApp.status !== "done" && (
+//                     <button
+//                       type="button"
+//                       onClick={() => setShowPaymentSelector(true)}
+//                       className="w-full py-5 bg-emerald-500 text-white rounded-2xl font-black uppercase tracking-widest shadow-xl shadow-emerald-500/20 mb-4 transition-all hover:scale-[1.02]"
+//                     >
+//                       Confirmar y Cobrar
+//                     </button>
+//                   )}
+
+//                   <div className="space-y-4">
+//                     <div className="space-y-1.5">
+//                       <label className="text-[10px] font-black uppercase text-slate-400 ml-1">
+//                         Clienta
+//                       </label>
+//                       <input
+//                         required
+//                         value={currentApp.customer}
+//                         onChange={(e) =>
+//                           setCurrentApp({
+//                             ...currentApp,
+//                             customer: e.target.value,
+//                           })
+//                         }
+//                         className="w-full p-4 bg-slate-100 border-2 border-transparent focus:border-slate-900 rounded-xl font-bold outline-none uppercase text-sm"
+//                         placeholder="VALENTINA GÓMEZ"
+//                       />
+//                     </div>
+
+//                     <div className="space-y-1.5">
+//                       <label className="text-[10px] font-black uppercase text-slate-400 ml-1">
+//                         WhatsApp
+//                       </label>
+//                       <div className="relative">
+//                         <Phone
+//                           className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
+//                           size={16}
+//                         />
+//                         <input
+//                           value={currentApp.phone}
+//                           onChange={(e) =>
+//                             setCurrentApp({
+//                               ...currentApp,
+//                               phone: e.target.value,
+//                             })
+//                           }
+//                           className="w-full pl-12 pr-4 py-4 bg-slate-100 border-2 border-transparent focus:border-slate-900 rounded-xl font-bold outline-none text-sm"
+//                           placeholder="09X XXX XXX"
+//                         />
+//                       </div>
+//                     </div>
+
+//                     <div className="grid grid-cols-2 gap-4">
+//                       <div className="space-y-1.5">
+//                         <label className="text-[10px] font-black uppercase text-slate-400 ml-1">
+//                           Día
+//                         </label>
+//                         <select
+//                           value={currentApp.day}
+//                           onChange={(e) =>
+//                             setCurrentApp({
+//                               ...currentApp,
+//                               day: parseInt(e.target.value),
+//                             })
+//                           }
+//                           className="w-full p-4 bg-slate-100 rounded-xl font-bold outline-none text-sm uppercase"
+//                         >
+//                           {DAYS.map((d, i) => (
+//                             <option key={i} value={i}>
+//                               {d}
+//                             </option>
+//                           ))}
+//                         </select>
+//                       </div>
+//                       <div className="space-y-1.5">
+//                         <label className="text-[10px] font-black uppercase text-slate-400 ml-1">
+//                           Hora
+//                         </label>
+//                         <input
+//                           type="time"
+//                           value={currentApp.start}
+//                           onChange={(e) =>
+//                             setCurrentApp({
+//                               ...currentApp,
+//                               start: e.target.value,
+//                             })
+//                           }
+//                           className="w-full p-4 bg-slate-100 rounded-xl font-bold outline-none text-sm"
+//                         />
+//                       </div>
+//                     </div>
+
+//                     <div className="space-y-1.5">
+//                       <label className="text-[10px] font-black uppercase text-slate-400 ml-1">
+//                         Especialista
+//                       </label>
+//                       <select
+//                         value={currentApp.specialist}
+//                         onChange={(e) =>
+//                           setCurrentApp({
+//                             ...currentApp,
+//                             specialist: e.target.value,
+//                           })
+//                         }
+//                         className="w-full p-4 bg-slate-100 rounded-xl font-bold outline-none text-sm uppercase"
+//                       >
+//                         {team.map((s) => (
+//                           <option key={s.id} value={s.name}>
+//                             {s.name}
+//                           </option>
+//                         ))}
+//                       </select>
+//                     </div>
+
+//                     <div className="space-y-3 pt-2">
+//                       <label className="text-[10px] font-black uppercase text-slate-400 ml-1 flex justify-between">
+//                         <span>Tratamientos</span>
+//                         {currentApp.selectedServiceIds?.length === 0 && (
+//                           <span className="text-rose-500 animate-pulse">
+//                             Selección obligatoria
+//                           </span>
+//                         )}
+//                       </label>
+
+//                       <div className="grid gap-2">
+//                         {availableServices.map((s) => {
+//                           const isSelected =
+//                             currentApp.selectedServiceIds?.includes(s.id);
+//                           return (
+//                             <div
+//                               key={s.id}
+//                               onClick={() => {
+//                                 if (currentApp.status !== "done") {
+//                                   const currentIds =
+//                                     currentApp.selectedServiceIds || [];
+//                                   setCurrentApp((prev) => ({
+//                                     ...prev,
+//                                     selectedServiceIds: isSelected
+//                                       ? currentIds.filter((id) => id !== s.id)
+//                                       : [...currentIds, s.id],
+//                                   }));
+//                                 }
+//                               }}
+//                               className={`p-4 rounded-2xl border-2 flex justify-between items-center cursor-pointer transition-all group ${
+//                                 isSelected
+//                                   ? "border-pink-500 bg-pink-50 shadow-sm"
+//                                   : "border-transparent bg-slate-50 hover:bg-slate-100"
+//                               }`}
+//                             >
+//                               <div className="flex items-center gap-3">
+//                                 {/* Icono de Checkbox Estético */}
+//                                 <div
+//                                   className={`size-5 rounded-lg border-2 flex items-center justify-center transition-all ${
+//                                     isSelected
+//                                       ? "bg-pink-500 border-pink-500 shadow-lg shadow-pink-500/20"
+//                                       : "bg-white border-slate-200"
+//                                   }`}
+//                                 >
+//                                   {isSelected && (
+//                                     <Check
+//                                       size={14}
+//                                       className="text-white"
+//                                       strokeWidth={4}
+//                                     />
+//                                   )}
+//                                 </div>
+//                                 <span
+//                                   className={`text-[11px] font-black uppercase tracking-tight ${
+//                                     isSelected
+//                                       ? "text-pink-700"
+//                                       : "text-slate-700"
+//                                   }`}
+//                                 >
+//                                   {s.name}
+//                                 </span>
+//                               </div>
+
+//                               <span
+//                                 className={`text-xs font-black ${
+//                                   isSelected
+//                                     ? "text-pink-600"
+//                                     : "text-slate-400"
+//                                 }`}
+//                               >
+//                                 ${s.price}
+//                               </span>
+//                             </div>
+//                           );
+//                         })}
+//                       </div>
+//                     </div>
+//                   </div>
+//                 </form>
+//               ) : (
+//                 <div className="space-y-6">
+//                   <button
+//                     onClick={() => setShowPaymentSelector(false)}
+//                     className="text-[10px] font-black uppercase text-slate-400 mb-4 hover:text-pink-600"
+//                   >
+//                     ← Volver
+//                   </button>
+//                   <div className="grid gap-3">
+//                     {PAYMENT_METHODS.map((m) => (
+//                       <button
+//                         key={m.id}
+//                         onClick={() => setSelectedMethod(m.id)}
+//                         className={`p-6 rounded-[2rem] border-2 flex justify-between items-center transition-all ${
+//                           selectedMethod === m.id
+//                             ? "border-pink-500 bg-pink-50"
+//                             : "border-slate-100 bg-white"
+//                         }`}
+//                       >
+//                         <div className="flex items-center gap-5">
+//                           <div
+//                             className={`p-4 rounded-2xl ${
+//                               selectedMethod === m.id
+//                                 ? "bg-pink-500 text-white"
+//                                 : "bg-slate-100 text-slate-400"
+//                             }`}
+//                           >
+//                             {m.icon}
+//                           </div>
+//                           <span className="font-black text-xs uppercase tracking-widest">
+//                             {m.name}
+//                           </span>
+//                         </div>
+//                         {selectedMethod === m.id && (
+//                           <div className="size-6 bg-pink-500 rounded-full flex items-center justify-center text-white">
+//                             <Check size={14} strokeWidth={4} />
+//                           </div>
+//                         )}
+//                       </button>
+//                     ))}
+//                   </div>
+//                 </div>
+//               )}
+//             </div>
+
+//             {/* TOTAL FIJO ABAJO */}
+//             <div className="relative bottom-0 left-0 right-0 pt-2 ">
+//               <div className="flex justify-between items-end mb-6">
+//                 <div>
+//                   <p className="text-[9px] font-black text-slate-300 uppercase tracking-widest">
+//                     Duración
+//                   </p>
+//                   <p className="text-sm font-bold text-slate-700">
+//                     {totalDuration} min
+//                   </p>
+//                 </div>
+//                 <div className="text-right">
+//                   <p className="text-[9px] font-black text-slate-300 uppercase tracking-widest">
+//                     Costo Total
+//                   </p>
+//                   <p className="text-4xl font-black text-pink-500 tracking-tighter">
+//                     ${totalAmount}
+//                   </p>
+//                 </div>
+//               </div>
+//               {!showPaymentSelector ? (
+//                 <button
+//                   onClick={handleSave}
+//                   className="w-full py-5 bg-slate-900 dark:bg-pink-700 text-white rounded-full font-black uppercase tracking-[0.2em] shadow-xl hover:bg-pink-600 transition-all"
+//                 >
+//                   Guardar Agenda
+//                 </button>
+//               ) : (
+//                 <button
+//                   onClick={() => alert("Cita finalizada")}
+//                   className="w-full py-5 bg-pink-500 text-white rounded-full font-black uppercase tracking-[0.2em] shadow-xl"
+//                 >
+//                   Finalizar $${totalAmount}
+//                 </button>
+//               )}
+//             </div>
+//           </div>
+//         </div>
+//       )}
+//     </div>
+//   );
+// }
+"use client";
+import React, { useState, useEffect, useMemo } from "react";
+import {
+  X,
+  Loader2,
+  Banknote,
+  Smartphone,
+  Receipt,
+  CreditCard,
+  Check,
+  Plus,
+  Phone,
+  Sparkles,
+  ChevronLeft,
+  ChevronRight,
+  Filter,
+} from "lucide-react";
+import { auth, db } from "@/services/firebase";
+import { onAuthStateChanged } from "firebase/auth";
+import { doc, getDoc, updateDoc } from "firebase/firestore";
+
+const HOUR_HEIGHT = 80;
+const START_HOUR = 8;
+const DAYS = [
+  "Lunes",
+  "Martes",
+  "Miércoles",
+  "Jueves",
+  "Viernes",
+  "Sábado",
+  "Domingo",
+];
+
+// Paleta estilo Byutie (Salmón pastel, Menta pastel, Gris cálido, Rosa pastel)
+const SPECIALIST_COLORS = [
+  {
+    bg: "bg-[#FFE4E6]",
+    text: "text-[#9F1239]",
+    badge: "bg-[#FECDD3] text-[#9F1239]",
+    accent: "bg-[#F43F5E]",
+  },
+  {
+    bg: "bg-[#DCFCE7]",
+    text: "text-[#166534]",
+    badge: "bg-[#BBF7D0] text-[#166534]",
+    accent: "bg-[#22C55E]",
+  },
+  {
+    bg: "bg-[#F1F5F9]",
+    text: "text-[#334155]",
+    badge: "bg-[#E2E8F0] text-[#334155]",
+    accent: "bg-[#64748B]",
+  },
+  {
+    bg: "bg-[#FFEDD5]",
+    text: "text-[#9A3412]",
+    badge: "bg-[#FED7AA] text-[#9A3412]",
+    accent: "bg-[#F97316]",
+  },
+];
+
+const PAYMENT_METHODS = [
+  { id: "cash", name: "Efectivo", icon: <Banknote size={16} /> },
+  { id: "transfer", name: "Transferencia", icon: <Receipt size={16} /> },
+  { id: "mp", name: "Mercado Pago", icon: <Smartphone size={16} /> },
+  { id: "pos", name: "POS / Tarjeta", icon: <CreditCard size={16} /> },
+];
+
+export default function CalendarPage() {
+  const [loading, setLoading] = useState(true);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [showPaymentSelector, setShowPaymentSelector] = useState(false);
+  const [selectedMethod, setSelectedMethod] = useState("cash");
+  const [user, setUser] = useState(null);
+  const [team, setTeam] = useState([]);
+  const [availableServices, setAvailableServices] = useState([]);
+  const [appointments, setAppointments] = useState([]);
+  const [viewFilter, setViewFilter] = useState("all");
+
+  const [currentApp, setCurrentApp] = useState({
+    id: null,
+    customer: "",
+    phone: "",
+    specialist: "",
+    start: "09:00",
+    day: 0,
+    status: "pending",
+    selectedServiceIds: [],
+  });
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+      if (currentUser) {
+        setUser(currentUser);
+        const docRef = doc(db, "centros_estetica", currentUser.uid);
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          setTeam(data.specialists || []);
+          setAvailableServices(data.services || []);
+          setAppointments(data.appointments || []);
+        }
+        setLoading(false);
+      }
+    });
+    return () => unsubscribe();
+  }, []);
+
+  const specialistColorMap = useMemo(() => {
+    const map = {};
+    team.forEach(
+      (s, i) => (map[s.name] = SPECIALIST_COLORS[i % SPECIALIST_COLORS.length]),
+    );
+    return map;
+  }, [team]);
+
+  const filteredAppointments = useMemo(() => {
+    if (viewFilter === "all") return appointments;
+    return appointments.filter((app) => app.specialist === viewFilter);
+  }, [appointments, viewFilter]);
+
+  const { totalAmount, totalDuration } = useMemo(() => {
+    if (!currentApp.selectedServiceIds?.length)
+      return { totalAmount: 0, totalDuration: 0 };
+    return currentApp.selectedServiceIds.reduce(
+      (acc, id) => {
+        const s = availableServices.find(
+          (svc) => String(svc.id) === String(id),
+        );
+        return {
+          totalAmount: acc.totalAmount + (Number(s?.price) || 0),
+          totalDuration: acc.totalDuration + (Number(s?.time) || 60),
+        };
+      },
+      { totalAmount: 0, totalDuration: 0 },
+    );
+  }, [currentApp.selectedServiceIds, availableServices]);
+
+  const handleSave = async (e) => {
+    if (e) e.preventDefault();
+    if (!currentApp.customer) return alert("Ingresa el nombre del paciente");
+    const today = new Date();
+    const targetDate = new Date(today);
+    targetDate.setDate(
+      today.getDate() +
+        (currentApp.day - (today.getDay() === 0 ? 6 : today.getDay() - 1)),
+    );
+
+    const appData = {
+      ...currentApp,
+      id: currentApp.id || Math.random().toString(36).substring(2, 15),
+      total: totalAmount,
+      duration: totalDuration,
+      date: targetDate.toLocaleDateString("sv-SE"),
+      createdAt: currentApp.createdAt || new Date().toISOString(),
+    };
+
+    const newList = appointments.some(
+      (a) => String(a.id) === String(currentApp.id),
+    )
+      ? appointments.map((a) =>
+          String(a.id) === String(currentApp.id) ? appData : a,
+        )
+      : [...appointments, appData];
+
+    await updateDoc(doc(db, "centros_estetica", user.uid), {
+      appointments: newList,
+    });
+    setAppointments(newList);
+    setIsDrawerOpen(false);
+  };
+
+  const getTimeTop = (t) => {
+    const [h, m] = t.split(":").map(Number);
+    return (h + m / 60 - START_HOUR) * HOUR_HEIGHT;
+  };
+
+  if (loading)
+    return (
+      <div className="h-screen flex items-center justify-center bg-[#FAF8F5]">
+        <Loader2 className="animate-spin text-[#4ADE80]" size={36} />
+      </div>
+    );
+
+  return (
+    <div className="flex flex-col h-full bg-[#FAF8F5] p-4 lg:p-6 text-slate-700 font-sans antialiased overflow-hidden">
+      {/* HEADER DE LA AGENDA */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-800 tracking-tight">
+            Surgery Schedule
+          </h1>
+          <p className="text-xs text-slate-400 mt-0.5">
+            Gestión e historial de turnos para tratamientos y especialidades.
+          </p>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <div className="flex items-center bg-white border border-slate-200/80 rounded-xl px-2 py-1 shadow-xs">
+            <button className="p-1.5 text-slate-400 hover:text-slate-700">
+              <ChevronLeft size={16} />
+            </button>
+            <span className="text-xs font-semibold text-slate-700 px-3">
+              Septiembre 2026
+            </span>
+            <button className="p-1.5 text-slate-400 hover:text-slate-700">
+              <ChevronRight size={16} />
+            </button>
+          </div>
+
+          <button
+            onClick={() => {
+              setCurrentApp({
+                id: null,
+                customer: "",
+                phone: "",
+                specialist: team[0]?.name || "",
+                start: "09:00",
+                day: 0,
+                status: "pending",
+                selectedServiceIds: [],
+              });
+              setShowPaymentSelector(false);
+              setIsDrawerOpen(true);
+            }}
+            className="flex items-center gap-2 bg-[#DCFCE7] hover:bg-[#BBF7D0] text-[#15803D] px-4 py-2.5 rounded-xl font-bold text-xs transition-colors shadow-xs"
+          >
+            <Plus size={16} />
+            <span>Nueva Cita</span>
+          </button>
+        </div>
+      </div>
+
+      {/* FILTROS POR ESPECIALISTA / TRATAMIENTO */}
+      <div className="flex items-center gap-2 overflow-x-auto pb-3 mb-2 scrollbar-hide">
+        <button
+          onClick={() => setViewFilter("all")}
+          className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all shrink-0 flex items-center gap-1.5 ${
+            viewFilter === "all"
+              ? "bg-[#15803D] text-white shadow-xs"
+              : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-50"
+          }`}
+        >
+          {viewFilter === "all" && <Check size={12} />}
+          <span>Todos</span>
+        </button>
+        {team.map((s) => {
+          const active = viewFilter === s.name;
+          return (
+            <button
+              key={s.id}
+              onClick={() => setViewFilter(s.name)}
+              className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all shrink-0 flex items-center gap-1.5 ${
+                active
+                  ? "bg-[#15803D] text-white shadow-xs"
+                  : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-50"
+              }`}
+            >
+              {active && <Check size={12} />}
+              <span>{s.name}</span>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* CONTENEDOR DEL CALENDARIO */}
+      <div className="flex-1 w-full bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden flex flex-col">
+        {/* Cabecera de días */}
+        <div className="grid grid-cols-8 border-b border-slate-100 bg-[#FAF8F5]/50 text-slate-500 font-semibold text-xs">
+          <div className="p-3 text-center border-r border-slate-100 text-[11px] text-slate-400">
+            GMT-3
+          </div>
+          {DAYS.map((d, index) => (
+            <div
+              key={d}
+              className="py-3 text-center border-r border-slate-100 last:border-r-0"
+            >
+              <span className="block text-[10px] text-slate-400 uppercase tracking-wider font-bold">
+                {d.substring(0, 3)}
+              </span>
+              <span className="text-sm font-extrabold text-slate-800">
+                {18 + index}
+              </span>
+            </div>
+          ))}
+        </div>
+
+        {/* Grilla de horas */}
+        <div className="flex-1 overflow-y-auto relative">
+          <div
+            className="grid grid-cols-8 relative"
+            style={{ height: 12 * HOUR_HEIGHT }}
+          >
+            {/* Columna de Horas */}
+            <div className="border-r border-slate-100 bg-[#FAF8F5]/30">
+              {Array.from({ length: 12 }).map((_, i) => (
+                <div
+                  key={i}
+                  style={{ height: HOUR_HEIGHT }}
+                  className="text-[11px] font-semibold text-slate-400 text-center pt-2"
+                >
+                  {(i + START_HOUR).toString().padStart(2, "0")}:00
+                </div>
+              ))}
+            </div>
+
+            {/* Columnas de los Días */}
+            {DAYS.map((_, colIdx) => (
+              <div
+                key={colIdx}
+                className="border-r border-slate-100 last:border-r-0 relative"
+              >
+                {Array.from({ length: 12 }).map((_, rowIdx) => (
+                  <div
+                    key={rowIdx}
+                    style={{ height: HOUR_HEIGHT }}
+                    className="border-b border-slate-100/70"
+                  />
+                ))}
+              </div>
+            ))}
+
+            {/* Render de Tarjetas de Citas */}
+            {filteredAppointments.map((app) => {
+              const colors =
+                specialistColorMap[app.specialist] || SPECIALIST_COLORS[0];
+              const topPos = getTimeTop(app.start);
+              const heightPos =
+                ((Number(app.duration) || 60) / 60) * HOUR_HEIGHT - 6;
+
+              return (
+                <div
+                  key={app.id}
+                  onClick={() => {
+                    setCurrentApp(app);
+                    setShowPaymentSelector(false);
+                    setIsDrawerOpen(true);
+                  }}
+                  className={`absolute rounded-2xl p-2.5 transition-all cursor-pointer shadow-2xs hover:shadow-md border border-white/50 flex flex-col justify-between ${colors.bg} ${colors.text}`}
+                  style={{
+                    top: topPos + 3,
+                    height: Math.max(heightPos, 50),
+                    left: `calc(${(app.day + 1) * 12.5}% + 3px)`,
+                    width: "calc(12.5% - 6px)",
+                  }}
+                >
+                  <div>
+                    <div className="flex items-center justify-between gap-1 mb-1">
+                      <span
+                        className={`text-[9px] font-bold px-1.5 py-0.5 rounded-md ${colors.badge}`}
+                      >
+                        {app.start}
+                      </span>
+                    </div>
+                    <p className="text-xs font-extrabold truncate leading-tight">
+                      {app.customer}
+                    </p>
+                    <p className="text-[10px] opacity-80 truncate font-medium">
+                      {app.specialist}
+                    </p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      {/* DRAWER LATERAL / ESTILO BYUTIE */}
+      {isDrawerOpen && (
+        <div className="fixed inset-0 z-50 flex justify-end">
+          <div
+            className="absolute inset-0 bg-slate-900/20 backdrop-blur-xs transition-opacity"
+            onClick={() => setIsDrawerOpen(false)}
+          />
+          <div className="relative w-full max-w-md bg-[#FAF8F5] h-full shadow-2xl flex flex-col p-6 overflow-y-auto animate-in slide-in-from-right duration-200">
+            <div className="flex justify-between items-center pb-4 border-b border-slate-200/80 mb-6">
+              <div>
+                <h2 className="text-lg font-extrabold text-slate-800">
+                  {showPaymentSelector ? "Cobro de Cita" : "Detalles de Cita"}
+                </h2>
+                <p className="text-xs text-slate-400">
+                  Gestión del paciente y servicios asociados.
+                </p>
+              </div>
+              <button
+                onClick={() => setIsDrawerOpen(false)}
+                className="p-1.5 text-slate-400 hover:text-slate-700 rounded-xl hover:bg-slate-200/50"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {!showPaymentSelector ? (
+              <form onSubmit={handleSave} className="space-y-4 flex-1">
+                {currentApp.id && currentApp.status !== "done" && (
+                  <button
+                    type="button"
+                    onClick={() => setShowPaymentSelector(true)}
+                    className="w-full py-2.5 bg-[#DCFCE7] hover:bg-[#BBF7D0] text-[#15803D] font-bold text-xs rounded-xl transition-colors shadow-xs mb-2"
+                  >
+                    Confirmar y Procesar Pago
+                  </button>
+                )}
+
+                <div>
+                  <label className="text-[11px] font-bold text-slate-500 block mb-1">
+                    Paciente
+                  </label>
+                  <input
+                    required
+                    value={currentApp.customer}
+                    onChange={(e) =>
+                      setCurrentApp({
+                        ...currentApp,
+                        customer: e.target.value,
+                      })
+                    }
+                    className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:border-[#4ADE80]"
+                    placeholder="Nombre completo"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-[11px] font-bold text-slate-500 block mb-1">
+                    Teléfono / WhatsApp
+                  </label>
+                  <div className="relative">
+                    <Phone
+                      className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+                      size={14}
+                    />
+                    <input
+                      value={currentApp.phone}
+                      onChange={(e) =>
+                        setCurrentApp({
+                          ...currentApp,
+                          phone: e.target.value,
+                        })
+                      }
+                      className="w-full pl-9 pr-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:border-[#4ADE80]"
+                      placeholder="09X XXX XXX"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-[11px] font-bold text-slate-500 block mb-1">
+                      Día
+                    </label>
+                    <select
+                      value={currentApp.day}
+                      onChange={(e) =>
+                        setCurrentApp({
+                          ...currentApp,
+                          day: parseInt(e.target.value),
+                        })
+                      }
+                      className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:border-[#4ADE80]"
+                    >
+                      {DAYS.map((d, i) => (
+                        <option key={i} value={i}>
+                          {d}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-bold text-slate-500 block mb-1">
+                      Hora
+                    </label>
+                    <input
+                      type="time"
+                      value={currentApp.start}
+                      onChange={(e) =>
+                        setCurrentApp({
+                          ...currentApp,
+                          start: e.target.value,
+                        })
+                      }
+                      className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:border-[#4ADE80]"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-[11px] font-bold text-slate-500 block mb-1">
+                    Especialista
+                  </label>
+                  <select
+                    value={currentApp.specialist}
+                    onChange={(e) =>
+                      setCurrentApp({
+                        ...currentApp,
+                        specialist: e.target.value,
+                      })
+                    }
+                    className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:border-[#4ADE80]"
+                  >
+                    {team.map((s) => (
+                      <option key={s.id} value={s.name}>
+                        {s.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-[11px] font-bold text-slate-500 block mb-1.5">
+                    Tratamientos
+                  </label>
+                  <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
+                    {availableServices.map((s) => {
+                      const isSelected =
+                        currentApp.selectedServiceIds?.includes(s.id);
+                      return (
+                        <div
+                          key={s.id}
+                          onClick={() => {
+                            if (currentApp.status !== "done") {
+                              const currentIds =
+                                currentApp.selectedServiceIds || [];
+                              setCurrentApp((prev) => ({
+                                ...prev,
+                                selectedServiceIds: isSelected
+                                  ? currentIds.filter((id) => id !== s.id)
+                                  : [...currentIds, s.id],
+                              }));
+                            }
+                          }}
+                          className={`p-2.5 rounded-xl border transition-all cursor-pointer flex items-center justify-between ${
+                            isSelected
+                              ? "border-[#4ADE80] bg-[#DCFCE7]/40"
+                              : "border-slate-200/80 bg-white hover:bg-slate-50"
+                          }`}
+                        >
+                          <div className="flex items-center gap-2">
+                            <div
+                              className={`w-4 h-4 rounded-md flex items-center justify-center border ${
+                                isSelected
+                                  ? "bg-[#15803D] border-[#15803D] text-white"
+                                  : "border-slate-300 bg-white"
+                              }`}
+                            >
+                              {isSelected && <Check size={10} />}
+                            </div>
+                            <span className="text-xs font-semibold text-slate-700">
+                              {s.name}
+                            </span>
+                          </div>
+                          <span className="text-xs font-bold text-slate-800">
+                            ${s.price}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </form>
+            ) : (
+              <div className="space-y-3 flex-1">
+                <button
+                  onClick={() => setShowPaymentSelector(false)}
+                  className="text-xs font-bold text-slate-400 hover:text-slate-700 mb-2"
+                >
+                  ← Volver a los detalles
+                </button>
+                <div className="space-y-2">
+                  {PAYMENT_METHODS.map((m) => (
+                    <button
+                      key={m.id}
+                      onClick={() => setSelectedMethod(m.id)}
+                      className={`w-full p-3 rounded-xl border flex items-center justify-between transition-all ${
+                        selectedMethod === m.id
+                          ? "border-[#4ADE80] bg-[#DCFCE7]/40 text-[#15803D]"
+                          : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 rounded-lg bg-slate-100">
+                          {m.icon}
+                        </div>
+                        <span className="text-xs font-bold">{m.name}</span>
+                      </div>
+                      {selectedMethod === m.id && <Check size={16} />}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* TOTAL Y ACCIÓN */}
+            <div className="pt-4 border-t border-slate-200/80 mt-auto">
+              <div className="flex justify-between items-center mb-4">
+                <div>
+                  <span className="text-[10px] font-bold text-slate-400 uppercase">
+                    Duración
+                  </span>
+                  <p className="text-xs font-bold text-slate-700">
+                    {totalDuration} min
+                  </p>
+                </div>
+                <div className="text-right">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase">
+                    Monto Total
+                  </span>
+                  <p className="text-2xl font-extrabold text-slate-800">
+                    ${totalAmount}
+                  </p>
+                </div>
+              </div>
+
+              {!showPaymentSelector ? (
+                <button
+                  onClick={handleSave}
+                  className="w-full py-3 bg-[#4ADE80] hover:bg-[#22C55E] text-slate-900 font-bold text-xs rounded-xl transition-colors shadow-xs"
+                >
+                  Guardar Cita
+                </button>
+              ) : (
+                <button
+                  onClick={() => alert("Pago registrado exitosamente")}
+                  className="w-full py-3 bg-[#15803D] hover:bg-[#166534] text-white font-bold text-xs rounded-xl transition-colors shadow-xs"
+                >
+                  Finalizar Cobro (${totalAmount})
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
