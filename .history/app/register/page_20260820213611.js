@@ -450,14 +450,10 @@ export default function RegisterPage() {
           (service) =>
             service.name.trim() &&
             (service.specialistIds || []).length > 0 &&
-            specialists
-              .filter((specialist) =>
-                service.specialistIds?.includes(specialist.id),
-              )
-              .every(
-                (specialist) =>
-                  Number(service.specialistPrices?.[specialist.id]) > 0 &&
-                  Number(service.specialistTimes?.[specialist.id]) > 0,
+            specialists.every(
+              (specialist) =>
+                Number(service.specialistPrices?.[specialist.id]) > 0 &&
+                Number(service.specialistTimes?.[specialist.id]) > 0,
             ),
         )
       );

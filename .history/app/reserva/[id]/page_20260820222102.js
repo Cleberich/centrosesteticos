@@ -521,9 +521,9 @@ export default function PublicBookingPage() {
     setBooking({ ...booking, phone: formattedValue });
   };
 
-  const getServiceValue = (service, field, specialistName = booking.specialist) => {
+  const getServiceValue = (service, field) => {
     const specialist = estetica?.specialists?.find(
-      (item) => item.name === specialistName,
+      (item) => item.name === booking.specialist,
     );
     const specialistValues =
       field === "price" ? service?.specialistPrices : service?.specialistTimes;
@@ -544,24 +544,6 @@ export default function PublicBookingPage() {
         !service?.specialistIds?.length ||
         service.specialistIds.includes(specialist.id),
     );
-
-  const selectedServices = (estetica?.services || []).filter((service) =>
-    booking.selectedServiceIds.includes(service.id),
-  );
-
-  const canSpecialistPerformSelection = (specialist) =>
-    selectedServices.every(
-      (service) =>
-        !service.specialistIds?.length ||
-        service.specialistIds.includes(specialist.id),
-    );
-
-  const getBookingDuration = (specialistName) =>
-    selectedServices.reduce(
-      (total, service) =>
-        total + getServiceValue(service, "time", specialistName),
-      0,
-    ) || 60;
 
   useEffect(() => {
     const dates = [];
@@ -751,93 +733,53 @@ export default function PublicBookingPage() {
                 Paso 1 de 2
               </span>
               <h2 className="text-2xl font-extrabold text-slate-800 tracking-tight">
-                Elige tu servicio y especialista
+                ¿Qué servicio quieres reservar?
               </h2>
               <p className="text-xs font-medium text-slate-400 max-w-xs mx-auto">
-                Primero selecciona uno o varios servicios. Luego elige quién te atenderá.
+                Primero selecciona el tratamiento y luego te mostraremos quiénes lo realizan.
               </p>
             </div>
 
-            <div>
-              <p className="mb-3 text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                Servicios
-              </p>
-              <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-                {estetica?.services?.map((service) => {
-                  const selected = booking.selectedServiceIds.includes(service.id);
-                  return (
-                    <button
-                      key={service.id}
-                      type="button"
-                      onClick={() => {
-                        const ids = selected
-                          ? booking.selectedServiceIds.filter((id) => id !== service.id)
-                          : [...booking.selectedServiceIds, service.id];
-                        setBooking({
-                          ...booking,
-                          selectedServiceIds: ids,
-                          service: estetica.services
-                            .filter((item) => ids.includes(item.id))
-                            .map((item) => item.name)
-                            .join(", "),
-                          specialist: "",
-                        });
-                      }}
-                      className={`shrink-0 rounded-full border px-4 py-3 text-xs font-bold transition-all ${selected ? "border-emerald-400 bg-emerald-400 text-white" : "border-slate-200 bg-white text-slate-600 hover:border-emerald-300"}`}
-                    >
-                      {service.name}
-                    </button>
-                  );
-                })}
-              </div>
+            <div className="grid grid-cols-1 gap-4">
+              {estetica?.services?.map((service) => (
+                <button
+                  key={service.id}
+                  onClick={() => {
+                    setBooking({
+                      ...booking,
+                      service: service.name,
+                      selectedServiceIds: [service.id],
+                      specialist: "",
+                    });
+                    setStep(2);
+                  }}
+                  className="w-full flex items-center justify-between p-4 bg-white border border-rose-100/70 rounded-3xl hover:border-emerald-300 hover:shadow-md transition-all group text-left"
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="size-14 rounded-2xl bg-rose-50 border border-rose-100 overflow-hidden ring-2 ring-transparent group-hover:ring-emerald-300 transition-all shrink-0">
+                      <img
+                        src={
+                          `https://api.dicebear.com/7.x/shapes/svg?seed=${service.name}`
+                        }
+                        className="w-full h-full object-cover"
+                        alt=""
+                      />
+                    </div>
+                    <div>
+                      <p className="font-bold text-slate-800 text-sm">
+                        {service.name}
+                      </p>
+                      <p className="text-[11px] font-medium text-slate-400 mt-0.5">
+                        {service.category || "Servicio de estética"}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="size-10 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center group-hover:bg-emerald-400 group-hover:text-white transition-all text-slate-400">
+                    <ChevronRight size={18} />
+                  </div>
+                </button>
+              ))}
             </div>
-
-            <div>
-              <p className="mb-3 text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                Especialistas disponibles
-              </p>
-              <div className="grid grid-cols-1 gap-3">
-                {estetica?.specialists
-                  ?.map((specialist) => {
-                  const available = canSpecialistPerformSelection(specialist);
-                  const selected = booking.specialist === specialist.name;
-                  return (
-                    <button
-                      key={specialist.id}
-                      type="button"
-                      disabled={!available}
-                      onClick={() => available && setBooking({ ...booking, specialist: specialist.name, duration: getBookingDuration(specialist.name) })}
-                      className={`flex items-center justify-between rounded-3xl border p-4 text-left transition-colors ${selected ? "border-emerald-400 bg-emerald-50" : available ? "border-rose-100/70 bg-white hover:border-emerald-300" : "border-slate-200 bg-slate-100 opacity-50 cursor-not-allowed"}`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <img
-                          src={
-                            specialist.imageUrl ||
-                            `https://api.dicebear.com/7.x/adventurer/svg?seed=${specialist.name}`
-                          }
-                          alt={specialist.name}
-                          className="size-14 rounded-2xl object-cover border border-rose-100 bg-rose-50"
-                        />
-                        <div>
-                        <p className="font-bold text-slate-800 text-sm">{specialist.name}</p>
-                        <p className="text-[11px] text-slate-400">{available ? specialist.specialty || "Especialista en Estética" : "No realiza todos los servicios seleccionados"}</p>
-                        </div>
-                      </div>
-                      {selected && <CheckCircle2 size={19} className="text-emerald-500" />}
-                    </button>
-                  );
-                  })}
-              </div>
-            </div>
-
-            <button
-              type="button"
-              disabled={!booking.selectedServiceIds.length || !booking.specialist}
-              onClick={() => setStep(2)}
-              className="w-full rounded-2xl bg-slate-800 py-3.5 text-xs font-bold text-white disabled:cursor-not-allowed disabled:opacity-40"
-            >
-              Continuar con la reserva <ChevronRight size={16} className="inline ml-1" />
-            </button>
           </div>
         )}
 
@@ -848,49 +790,14 @@ export default function PublicBookingPage() {
               onClick={() => setStep(1)}
               className="flex items-center gap-2 text-xs font-bold text-slate-400 mb-6 hover:text-slate-700 transition-colors bg-white px-4 py-2 rounded-2xl border border-rose-100/60 shadow-sm w-fit"
             >
-              <ChevronLeft size={16} /> Cambiar Servicio ({booking.service})
+              <ChevronLeft size={16} /> Cambiar Especialista (
+              {booking.specialist})
             </button>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
               {/* FORMULARIO */}
               <div className="space-y-6">
                 <div className="bg-white p-8 rounded-[2rem] border border-rose-100/60 shadow-sm space-y-6">
-                  <div className="space-y-4">
-                    <label className="flex items-center gap-2 text-xs font-bold text-slate-700 uppercase tracking-wider">
-                      <User size={15} className="text-emerald-500" /> Especialista
-                    </label>
-                    <div className="grid grid-cols-1 gap-2">
-                      {getSpecialistsForService(
-                        estetica?.services?.find(
-                          (service) => service.id === booking.selectedServiceIds?.[0],
-                        ),
-                      ).map((specialist) => (
-                        <button
-                          key={specialist.id}
-                          type="button"
-                          onClick={() => {
-                            const service = estetica.services.find(
-                              (item) => item.id === booking.selectedServiceIds?.[0],
-                            );
-                            setBooking({
-                              ...booking,
-                              specialist: specialist.name,
-                              duration: getServiceValue(
-                                service,
-                                "time",
-                                specialist.name,
-                              ),
-                            });
-                          }}
-                          className={`flex items-center justify-between rounded-2xl border p-3 text-left text-xs font-semibold transition-colors ${booking.specialist === specialist.name ? "border-emerald-400 bg-emerald-50 text-emerald-700" : "border-slate-200 bg-slate-50 text-slate-600 hover:border-emerald-300"}`}
-                        >
-                          <span>{specialist.name}</span>
-                          {booking.specialist === specialist.name && <CheckCircle2 size={16} />}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
                   <div className="space-y-4">
                     <label className="flex items-center gap-2 text-xs font-bold text-slate-700 uppercase tracking-wider">
                       <User size={15} className="text-emerald-500" /> Datos
@@ -930,9 +837,26 @@ export default function PublicBookingPage() {
                       <Briefcase size={15} className="text-emerald-500" />{" "}
                       Servicio / Tratamiento
                     </label>
-                    <div className="rounded-2xl bg-emerald-50/60 border border-emerald-100 px-4 py-3 text-xs font-semibold text-emerald-800">
-                      {booking.service}
-                    </div>
+                    <select
+                      className="w-full bg-slate-50/60 border border-slate-200/80 rounded-2xl py-3.5 px-4 text-xs font-semibold text-slate-800 focus:border-emerald-400 focus:bg-white outline-none cursor-pointer transition-all"
+                      onChange={(e) => {
+                        const svc = estetica.services.find(
+                          (s) => s.name === e.target.value,
+                        );
+                        setBooking({
+                          ...booking,
+                          service: e.target.value,
+                          selectedServiceIds: [svc.id],
+                          duration: getServiceValue(svc, "time"),
+                        });
+                      }}
+                    >
+                      {estetica?.services?.filter(isServiceAvailable).map((s, i) => (
+                        <option key={i} value={s.name}>
+                          {s.name} — ${getServiceValue(s, "price")}
+                        </option>
+                      ))}
+                    </select>
                   </div>
                 </div>
               </div>

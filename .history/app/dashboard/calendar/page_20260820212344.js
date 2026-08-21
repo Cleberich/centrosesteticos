@@ -759,12 +759,6 @@ const SPECIALIST_COLORS = [
     activeFilter: "bg-[#CA8A04] text-white border-[#CA8A04]",
   },
 ];
-const SPECIALIST_LIMITS = {
-  Inicial: 1,
-  Starter: 1,
-  Profesional: 3,
-  Business: 5,
-};
 
 const PAYMENT_METHODS = [
   { id: "cash", name: "Efectivo", icon: <Banknote size={16} /> },
@@ -808,13 +802,7 @@ export default function CalendarPage() {
         const docSnap = await getDoc(docRef);
         if (docSnap.exists()) {
           const data = docSnap.data();
-          const specialistLimit = SPECIALIST_LIMITS[data.plan?.type] || 1;
-          setTeam(
-            (data.specialists || []).map((specialist, index) => ({
-              ...specialist,
-              active: index < specialistLimit,
-            })),
-          );
+          setTeam(data.specialists || []);
           setAvailableServices(data.services || []);
           setAppointments(data.appointments || []);
         }
@@ -904,9 +892,6 @@ export default function CalendarPage() {
         const specialist = team.find(
           (item) => item.name === currentApp.specialist,
         );
-        if (s?.specialistIds?.length && !s.specialistIds.includes(specialist?.id)) {
-          return acc;
-        }
         const specialistPrice = s?.specialistPrices?.[specialist?.id];
         const specialistTime = s?.specialistTimes?.[specialist?.id];
         return {
@@ -926,12 +911,6 @@ export default function CalendarPage() {
     availableServices,
     team,
   ]);
-
-  const isServiceAvailable = (service) => {
-    if (!service.specialistIds?.length) return true;
-    const specialist = team.find((item) => item.name === currentApp.specialist);
-    return service.specialistIds.includes(specialist?.id);
-  };
 
   const handleSave = async (e) => {
     if (e) e.preventDefault();
@@ -1401,7 +1380,7 @@ export default function CalendarPage() {
                     Tratamientos
                   </label>
                   <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
-                    {availableServices.filter(isServiceAvailable).map((s) => {
+                    {availableServices.map((s) => {
                       const isSelected =
                         currentApp.selectedServiceIds?.includes(s.id);
                       return (

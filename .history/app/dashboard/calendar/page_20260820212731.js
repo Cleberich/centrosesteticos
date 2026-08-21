@@ -904,9 +904,6 @@ export default function CalendarPage() {
         const specialist = team.find(
           (item) => item.name === currentApp.specialist,
         );
-        if (s?.specialistIds?.length && !s.specialistIds.includes(specialist?.id)) {
-          return acc;
-        }
         const specialistPrice = s?.specialistPrices?.[specialist?.id];
         const specialistTime = s?.specialistTimes?.[specialist?.id];
         return {
@@ -926,12 +923,6 @@ export default function CalendarPage() {
     availableServices,
     team,
   ]);
-
-  const isServiceAvailable = (service) => {
-    if (!service.specialistIds?.length) return true;
-    const specialist = team.find((item) => item.name === currentApp.specialist);
-    return service.specialistIds.includes(specialist?.id);
-  };
 
   const handleSave = async (e) => {
     if (e) e.preventDefault();
@@ -1401,7 +1392,7 @@ export default function CalendarPage() {
                     Tratamientos
                   </label>
                   <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
-                    {availableServices.filter(isServiceAvailable).map((s) => {
+                    {availableServices.map((s) => {
                       const isSelected =
                         currentApp.selectedServiceIds?.includes(s.id);
                       return (

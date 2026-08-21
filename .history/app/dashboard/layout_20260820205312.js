@@ -406,17 +406,6 @@ export default function DashboardLayout({ children }) {
           />
         </nav>
       </div>
-
-      {/* PROMO WIDGET & LOGOUT */}
-      <div className="space-y-4 pt-4">
-        <button
-          onClick={handleLogout}
-          className="flex items-center gap-2.5 text-slate-400 hover:text-slate-700 text-xs font-semibold px-2 py-1 transition-colors w-full"
-        >
-          <LogOut size={16} />
-          <span>Logout</span>
-        </button>
-      </div>
     </div>
   );
 

@@ -373,7 +373,6 @@ export default function RegisterPage() {
         active: true,
         specialistPrices: {},
         specialistTimes: {},
-        specialistIds: [],
       },
     ]);
 
@@ -393,12 +392,7 @@ export default function RegisterPage() {
     );
   };
 
-  const updateServiceSpecialistValue = (
-    serviceId,
-    specialistId,
-    field,
-    value,
-  ) => {
+  const updateServiceSpecialistValue = (serviceId, specialistId, field, value) => {
     setServices((current) =>
       current.map((service) =>
         service.id === serviceId
@@ -414,21 +408,6 @@ export default function RegisterPage() {
     );
   };
 
-  const toggleServiceSpecialist = (serviceId, specialistId) => {
-    setServices((current) =>
-      current.map((service) => {
-        if (service.id !== serviceId) return service;
-        const assigned = service.specialistIds || [];
-        return {
-          ...service,
-          specialistIds: assigned.includes(specialistId)
-            ? assigned.filter((id) => id !== specialistId)
-            : [...assigned, specialistId],
-        };
-      }),
-    );
-  };
-
   const canContinue = () => {
     if (step === 1) {
       return (
@@ -439,25 +418,17 @@ export default function RegisterPage() {
       );
     }
     if (step === 2) return categories.length > 0;
-    if (step === 3)
-      return (
-        specialists.length > 0 && specialists.every((item) => item.name.trim())
-      );
+    if (step === 3) return specialists.length > 0 && specialists.every((item) => item.name.trim());
     if (step === 4) {
       return (
         services.length > 0 &&
         services.every(
           (service) =>
             service.name.trim() &&
-            (service.specialistIds || []).length > 0 &&
-            specialists
-              .filter((specialist) =>
-                service.specialistIds?.includes(specialist.id),
-              )
-              .every(
-                (specialist) =>
-                  Number(service.specialistPrices?.[specialist.id]) > 0 &&
-                  Number(service.specialistTimes?.[specialist.id]) > 0,
+            specialists.every(
+              (specialist) =>
+                Number(service.specialistPrices?.[specialist.id]) > 0 &&
+                Number(service.specialistTimes?.[specialist.id]) > 0,
             ),
         )
       );
@@ -469,12 +440,7 @@ export default function RegisterPage() {
     if (!canContinue()) return;
     if (step === 2 && specialists.length === 0) {
       setSpecialists([
-        {
-          id: generateUID(),
-          name: formData.ownerName,
-          specialty: "",
-          active: true,
-        },
+        { id: generateUID(), name: formData.ownerName, specialty: "", active: true },
       ]);
     }
     if (step === 3 && services.length === 0) {
@@ -488,7 +454,6 @@ export default function RegisterPage() {
           active: true,
           specialistPrices: {},
           specialistTimes: {},
-          specialistIds: [],
         },
       ]);
     }
@@ -523,8 +488,7 @@ export default function RegisterPage() {
         name: service.name.trim(),
         category: service.category || categories[0],
         price: String(
-          service.specialistPrices[configuredSpecialists[0]?.id] ||
-            service.price,
+          service.specialistPrices[configuredSpecialists[0]?.id] || service.price,
         ),
         time: Number(
           service.specialistTimes[configuredSpecialists[0]?.id] || service.time,
@@ -541,7 +505,6 @@ export default function RegisterPage() {
             Number(service.specialistTimes[specialist.id]),
           ]),
         ),
-        specialistIds: service.specialistIds || [],
       }));
 
       const today = new Date();
@@ -629,356 +592,95 @@ export default function RegisterPage() {
             <span>Paso {step} de 5</span>
             <div className="flex gap-1">
               {[1, 2, 3, 4, 5].map((item) => (
-                <div
-                  key={item}
-                  className={`h-1.5 w-7 rounded-full ${item <= step ? "bg-emerald-400" : "bg-slate-100"}`}
-                />
+                <div key={item} className={`h-1.5 w-7 rounded-full ${item <= step ? "bg-emerald-400" : "bg-slate-100"}`} />
               ))}
             </div>
           </div>
 
           <form onSubmit={handleRegister} className="space-y-5">
-            {step === 1 && (
-              <div className="space-y-3.5">
-                <InputGroup
-                  label="Nombre del Centro de Estética"
-                  name="businessName"
-                  placeholder="Ej. Centro Belleza"
-                  icon={<Store size={16} />}
-                  value={formData.businessName}
-                  onChange={handleChange}
-                  required
-                />
+            {step === 1 && <div className="space-y-3.5">
+            <InputGroup
+              label="Nombre del Centro de Estética"
+              name="businessName"
+              placeholder="Ej. Centro Belleza"
+              icon={<Store size={16} />}
+              value={formData.businessName}
+              onChange={handleChange}
+              required
+            />
 
-                <InputGroup
-                  label="Tu Nombre (Especialista Principal)"
-                  name="ownerName"
-                  placeholder="Ej. Valentina Gómez"
-                  icon={<User size={16} />}
-                  value={formData.ownerName}
-                  onChange={handleChange}
-                  required
-                />
+            <InputGroup
+              label="Tu Nombre (Especialista Principal)"
+              name="ownerName"
+              placeholder="Ej. Valentina Gómez"
+              icon={<User size={16} />}
+              value={formData.ownerName}
+              onChange={handleChange}
+              required
+            />
 
-                <InputGroup
-                  label="Teléfono / WhatsApp"
-                  name="phone"
-                  placeholder="Ej. 099 123 456"
-                  icon={<Phone size={16} />}
-                  value={formData.phone}
-                  onChange={handleChange}
-                />
-                <InputGroup
-                  label="Correo Electrónico"
-                  name="email"
-                  type="email"
-                  placeholder="contacto@tucentro.com"
-                  icon={<Mail size={16} />}
-                  value={formData.email}
-                  onChange={handleChange}
-                  required
-                />
+            <InputGroup
+              label="Correo Electrónico"
+              name="email"
+              type="email"
+              placeholder="contacto@tucentro.com"
+              icon={<Mail size={16} />}
+              value={formData.email}
+              onChange={handleChange}
+              required
+            />
 
-                <InputGroup
-                  label="Contraseña"
-                  name="password"
-                  type="password"
-                  placeholder="••••••••"
-                  icon={<Lock size={16} />}
-                  value={formData.password}
-                  onChange={handleChange}
-                  required
-                />
+            <InputGroup
+              label="Contraseña"
+              name="password"
+              type="password"
+              placeholder="••••••••"
+              icon={<Lock size={16} />}
+              value={formData.password}
+              onChange={handleChange}
+              required
+            />
+
+            <InputGroup
+              label="Teléfono / WhatsApp"
+              name="phone"
+              placeholder="Ej. 099 123 456"
+              icon={<Phone size={16} />}
+              value={formData.phone}
+              onChange={handleChange}
+            />
+            </div>}
+
+            {step === 2 && <div className="space-y-5">
+              <div><h3 className="text-lg font-bold text-slate-800">¿Qué servicios ofreces?</h3><p className="text-xs text-slate-400 mt-1">Selecciona una o varias categorías.</p></div>
+              <div className="grid grid-cols-2 gap-2">
+                {categoryOptions.map((category) => {
+                  const selected = categories.includes(category);
+                  return <button type="button" key={category} onClick={() => setCategories((current) => selected ? current.filter((item) => item !== category) : [...current, category])} className={`flex items-center justify-between rounded-2xl border p-3 text-left text-xs font-semibold ${selected ? "border-emerald-400 bg-emerald-50 text-emerald-700" : "border-slate-200 text-slate-600"}`}>{category}{selected && <Check size={15} />}</button>;
+                })}
               </div>
-            )}
+            </div>}
 
-            {step === 2 && (
-              <div className="space-y-5">
-                <div>
-                  <h3 className="text-lg font-bold text-slate-800">
-                    ¿Qué servicios ofreces?
-                  </h3>
-                  <p className="text-xs text-slate-400 mt-1">
-                    Selecciona una o varias categorías.
-                  </p>
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                  {categoryOptions.map((category) => {
-                    const selected = categories.includes(category);
-                    return (
-                      <button
-                        type="button"
-                        key={category}
-                        onClick={() =>
-                          setCategories((current) =>
-                            selected
-                              ? current.filter((item) => item !== category)
-                              : [...current, category],
-                          )
-                        }
-                        className={`flex items-center justify-between rounded-2xl border p-3 text-left text-xs font-semibold ${selected ? "border-emerald-400 bg-emerald-50 text-emerald-700" : "border-slate-200 text-slate-600"}`}
-                      >
-                        {category}
-                        {selected && <Check size={15} />}
-                      </button>
-                    );
-                  })}
-                </div>
+            {step === 3 && <div className="space-y-5">
+              <div><h3 className="text-lg font-bold text-slate-800">¿Quiénes atienden?</h3><p className="text-xs text-slate-400 mt-1">Agrega tu equipo. Tú ya eres la primera especialista.</p></div>
+              <div className="space-y-3">
+                {specialists.map((specialist, index) => <div key={specialist.id} className="flex gap-2 items-end"><div className="flex-1 grid grid-cols-2 gap-2"><input value={specialist.name} onChange={(event) => updateSpecialist(specialist.id, "name", event.target.value)} placeholder={index === 0 ? formData.ownerName : "Nombre"} className="rounded-2xl border border-slate-200 bg-slate-50 p-3 text-xs outline-none focus:border-emerald-400" /><input value={specialist.specialty} onChange={(event) => updateSpecialist(specialist.id, "specialty", event.target.value)} placeholder="Especialidad (opcional)" className="rounded-2xl border border-slate-200 bg-slate-50 p-3 text-xs outline-none focus:border-emerald-400" /></div>{specialists.length > 1 && <button type="button" onClick={() => setSpecialists((current) => current.filter((item) => item.id !== specialist.id))} className="p-3 text-rose-400" aria-label="Eliminar especialista"><Trash2 size={16} /></button>}</div>)}
               </div>
-            )}
+              <button type="button" onClick={addSpecialist} className="inline-flex items-center gap-2 text-xs font-bold text-emerald-600"><Plus size={16} /> Agregar especialista</button>
+            </div>}
 
-            {step === 3 && (
-              <div className="space-y-5">
-                <div>
-                  <h3 className="text-lg font-bold text-slate-800">
-                    ¿Quiénes atienden?
-                  </h3>
-                  <p className="text-xs text-slate-400 mt-1">
-                    Agrega tu equipo. Tú ya eres la primera especialista.
-                  </p>
-                </div>
-                <div className="space-y-3">
-                  {specialists.map((specialist, index) => (
-                    <div key={specialist.id} className="flex gap-2 items-end">
-                      <div className="flex-1 grid grid-cols-2 gap-2">
-                        <input
-                          value={specialist.name}
-                          onChange={(event) =>
-                            updateSpecialist(
-                              specialist.id,
-                              "name",
-                              event.target.value,
-                            )
-                          }
-                          placeholder={
-                            index === 0 ? formData.ownerName : "Nombre"
-                          }
-                          className="rounded-2xl border border-slate-200 bg-slate-50 p-3 text-xs outline-none focus:border-emerald-400"
-                        />
-                        <input
-                          value={specialist.specialty}
-                          onChange={(event) =>
-                            updateSpecialist(
-                              specialist.id,
-                              "specialty",
-                              event.target.value,
-                            )
-                          }
-                          placeholder="Especialidad (opcional)"
-                          className="rounded-2xl border border-slate-200 bg-slate-50 p-3 text-xs outline-none focus:border-emerald-400"
-                        />
-                      </div>
-                      {specialists.length > 1 && (
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setSpecialists((current) =>
-                              current.filter(
-                                (item) => item.id !== specialist.id,
-                              ),
-                            )
-                          }
-                          className="p-3 text-rose-400"
-                          aria-label="Eliminar especialista"
-                        >
-                          <Trash2 size={16} />
-                        </button>
-                      )}
-                    </div>
-                  ))}
-                </div>
-                <button
-                  type="button"
-                  onClick={addSpecialist}
-                  className="inline-flex items-center gap-2 text-xs font-bold text-emerald-600"
-                >
-                  <Plus size={16} /> Agregar especialista
-                </button>
-              </div>
-            )}
-
-            {step === 4 && (
-              <div className="space-y-5">
-                <div>
-                  <h3 className="text-lg font-bold text-slate-800">
-                    Configura tus servicios
-                  </h3>
-                  <p className="text-xs text-slate-400 mt-1">
-                    Cada especialista puede tener su propio precio y duración.
-                  </p>
-                </div>
-                <div className="space-y-4">
-                  {services.map((service) => (
-                    <div
-                      key={service.id}
-                      className="rounded-2xl border border-slate-200 p-4 space-y-3"
-                    >
-                      <div className="flex gap-2">
-                        <input
-                          value={service.name}
-                          onChange={(event) =>
-                            updateService(
-                              service.id,
-                              "name",
-                              event.target.value,
-                            )
-                          }
-                          placeholder="Ej. Manicura semipermanente"
-                          className="flex-1 rounded-xl border border-slate-200 p-3 text-xs outline-none focus:border-emerald-400"
-                        />
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setServices((current) =>
-                              current.filter((item) => item.id !== service.id),
-                            )
-                          }
-                          className="p-2 text-rose-400"
-                          aria-label="Eliminar servicio"
-                        >
-                          <Trash2 size={16} />
-                        </button>
-                      </div>
-                      <select
-                        value={service.category}
-                        onChange={(event) =>
-                          updateService(
-                            service.id,
-                            "category",
-                            event.target.value,
-                          )
-                        }
-                        className="w-full rounded-xl border border-slate-200 bg-white p-3 text-xs outline-none"
-                      >
-                        {(categories.length ? categories : categoryOptions).map(
-                          (category) => (
-                            <option key={category}>{category}</option>
-                          ),
-                        )}
-                      </select>
-                      <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                        ¿Quién realiza este servicio?
-                      </p>
-                      {specialists.map((specialist) => {
-                        const assigned = Boolean(
-                          service.specialistIds?.includes(specialist.id),
-                        );
-                        return (
-                          <div
-                            key={specialist.id}
-                            className="grid grid-cols-[auto_1fr_90px_90px] items-center gap-2"
-                          >
-                            <input
-                              type="checkbox"
-                              checked={assigned}
-                              onChange={() =>
-                                toggleServiceSpecialist(
-                                  service.id,
-                                  specialist.id,
-                                )
-                              }
-                              className="h-4 w-4 accent-emerald-500"
-                            />
-                            <span className="truncate text-xs font-semibold text-slate-600">
-                              {specialist.name || "Especialista"}
-                            </span>
-                            <input
-                              type="number"
-                              min="1"
-                              disabled={!assigned}
-                              value={
-                                service.specialistPrices?.[specialist.id] || ""
-                              }
-                              onChange={(event) =>
-                                updateServiceSpecialistValue(
-                                  service.id,
-                                  specialist.id,
-                                  "specialistPrices",
-                                  event.target.value,
-                                )
-                              }
-                              placeholder="$ Precio"
-                              className="rounded-xl border border-slate-200 p-2.5 text-xs outline-none focus:border-emerald-400 disabled:bg-slate-100"
-                            />
-                            <div className="relative">
-                              <Clock3
-                                size={13}
-                                className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400"
-                              />
-                              <input
-                                type="number"
-                                min="1"
-                                disabled={!assigned}
-                                value={
-                                  service.specialistTimes?.[specialist.id] || ""
-                                }
-                                onChange={(event) =>
-                                  updateServiceSpecialistValue(
-                                    service.id,
-                                    specialist.id,
-                                    "specialistTimes",
-                                    event.target.value,
-                                  )
-                                }
-                                placeholder="Min"
-                                className="w-full rounded-xl border border-slate-200 p-2.5 pl-7 text-xs outline-none focus:border-emerald-400 disabled:bg-slate-100"
-                              />
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  ))}
-                </div>
-                <button
-                  type="button"
-                  onClick={addService}
-                  className="inline-flex items-center gap-2 text-xs font-bold text-emerald-600"
-                >
-                  <Plus size={16} /> Agregar servicio
-                </button>
-              </div>
-            )}
-
-            {step === 5 && (
+            {step === 4 && <div className="space-y-5">
+              <div><h3 className="text-lg font-bold text-slate-800">Configura tus servicios</h3><p className="text-xs text-slate-400 mt-1">Cada especialista puede tener su propio precio y duración.</p></div>
               <div className="space-y-4">
-                <div>
-                  <h3 className="text-lg font-bold text-slate-800">
-                    Todo listo para comenzar
-                  </h3>
-                  <p className="text-xs text-slate-400 mt-1">
-                    Revisa tu configuración antes de crear la cuenta.
-                  </p>
-                </div>
-                <div className="rounded-2xl bg-slate-50 p-4 text-xs text-slate-600 space-y-2">
-                  <p>
-                    <strong>Centro:</strong> {formData.businessName}
-                  </p>
-                  <p>
-                    <strong>Categorías:</strong> {categories.join(", ")}
-                  </p>
-                  <p>
-                    <strong>Especialistas:</strong>{" "}
-                    {specialists.map((item) => item.name).join(", ")}
-                  </p>
-                  <p>
-                    <strong>Servicios:</strong>{" "}
-                    {services.map((item) => item.name).join(", ")}
-                  </p>
-                </div>
+                {services.map((service) => <div key={service.id} className="rounded-2xl border border-slate-200 p-4 space-y-3"><div className="flex gap-2"><input value={service.name} onChange={(event) => updateService(service.id, "name", event.target.value)} placeholder="Ej. Manicura semipermanente" className="flex-1 rounded-xl border border-slate-200 p-3 text-xs outline-none focus:border-emerald-400" /><button type="button" onClick={() => setServices((current) => current.filter((item) => item.id !== service.id))} className="p-2 text-rose-400" aria-label="Eliminar servicio"><Trash2 size={16} /></button></div><select value={service.category} onChange={(event) => updateService(service.id, "category", event.target.value)} className="w-full rounded-xl border border-slate-200 bg-white p-3 text-xs outline-none">{(categories.length ? categories : categoryOptions).map((category) => <option key={category}>{category}</option>)}</select>{specialists.map((specialist) => <div key={specialist.id} className="grid grid-cols-[1fr_90px_90px] items-center gap-2"><span className="truncate text-xs font-semibold text-slate-600">{specialist.name || "Especialista"}</span><input type="number" min="1" value={service.specialistPrices?.[specialist.id] || ""} onChange={(event) => updateServiceSpecialistValue(service.id, specialist.id, "specialistPrices", event.target.value)} placeholder="$ Precio" className="rounded-xl border border-slate-200 p-2.5 text-xs outline-none focus:border-emerald-400" /><div className="relative"><Clock3 size={13} className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400" /><input type="number" min="1" value={service.specialistTimes?.[specialist.id] || ""} onChange={(event) => updateServiceSpecialistValue(service.id, specialist.id, "specialistTimes", event.target.value)} placeholder="Min" className="w-full rounded-xl border border-slate-200 p-2.5 pl-7 text-xs outline-none focus:border-emerald-400" /></div></div>)}</div>)}
               </div>
-            )}
+              <button type="button" onClick={addService} className="inline-flex items-center gap-2 text-xs font-bold text-emerald-600"><Plus size={16} /> Agregar servicio</button>
+            </div>}
+
+            {step === 5 && <div className="space-y-4"><div><h3 className="text-lg font-bold text-slate-800">Todo listo para comenzar</h3><p className="text-xs text-slate-400 mt-1">Revisa tu configuración antes de crear la cuenta.</p></div><div className="rounded-2xl bg-slate-50 p-4 text-xs text-slate-600 space-y-2"><p><strong>Centro:</strong> {formData.businessName}</p><p><strong>Categorías:</strong> {categories.join(", ")}</p><p><strong>Especialistas:</strong> {specialists.map((item) => item.name).join(", ")}</p><p><strong>Servicios:</strong> {services.map((item) => item.name).join(", ")}</p></div></div>}
 
             <div className="flex gap-2 pt-2">
-              {step > 1 && (
-                <button
-                  type="button"
-                  onClick={() => setStep((current) => current - 1)}
-                  className="flex-1 rounded-2xl border border-slate-200 py-3.5 text-xs font-bold text-slate-500"
-                >
-                  <ArrowLeft size={15} className="inline mr-1" /> Atrás
-                </button>
-              )}
+              {step > 1 && <button type="button" onClick={() => setStep((current) => current - 1)} className="flex-1 rounded-2xl border border-slate-200 py-3.5 text-xs font-bold text-slate-500"><ArrowLeft size={15} className="inline mr-1" /> Atrás</button>}
               <button
                 disabled={loading}
                 type={step === 5 ? "submit" : "button"}

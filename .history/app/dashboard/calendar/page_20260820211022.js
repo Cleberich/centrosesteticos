@@ -759,12 +759,6 @@ const SPECIALIST_COLORS = [
     activeFilter: "bg-[#CA8A04] text-white border-[#CA8A04]",
   },
 ];
-const SPECIALIST_LIMITS = {
-  Inicial: 1,
-  Starter: 1,
-  Profesional: 3,
-  Business: 5,
-};
 
 const PAYMENT_METHODS = [
   { id: "cash", name: "Efectivo", icon: <Banknote size={16} /> },
@@ -808,13 +802,7 @@ export default function CalendarPage() {
         const docSnap = await getDoc(docRef);
         if (docSnap.exists()) {
           const data = docSnap.data();
-          const specialistLimit = SPECIALIST_LIMITS[data.plan?.type] || 1;
-          setTeam(
-            (data.specialists || []).map((specialist, index) => ({
-              ...specialist,
-              active: index < specialistLimit,
-            })),
-          );
+          setTeam(data.specialists || []);
           setAvailableServices(data.services || []);
           setAppointments(data.appointments || []);
         }
@@ -904,34 +892,18 @@ export default function CalendarPage() {
         const specialist = team.find(
           (item) => item.name === currentApp.specialist,
         );
-        if (s?.specialistIds?.length && !s.specialistIds.includes(specialist?.id)) {
-          return acc;
-        }
         const specialistPrice = s?.specialistPrices?.[specialist?.id];
         const specialistTime = s?.specialistTimes?.[specialist?.id];
         return {
           totalAmount:
-            acc.totalAmount +
-            (Number(specialistPrice) || Number(s?.price) || 0),
+            acc.totalAmount + (Number(specialistPrice) || Number(s?.price) || 0),
           totalDuration:
-            acc.totalDuration +
-            (Number(specialistTime) || Number(s?.time) || 60),
+            acc.totalDuration + (Number(specialistTime) || Number(s?.time) || 60),
         };
       },
       { totalAmount: 0, totalDuration: 0 },
     );
-  }, [
-    currentApp.selectedServiceIds,
-    currentApp.specialist,
-    availableServices,
-    team,
-  ]);
-
-  const isServiceAvailable = (service) => {
-    if (!service.specialistIds?.length) return true;
-    const specialist = team.find((item) => item.name === currentApp.specialist);
-    return service.specialistIds.includes(specialist?.id);
-  };
+  }, [currentApp.selectedServiceIds, currentApp.specialist, availableServices, team]);
 
   const handleSave = async (e) => {
     if (e) e.preventDefault();
@@ -1021,7 +993,7 @@ export default function CalendarPage() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
         <div>
           <h1 className="text-2xl font-bold text-slate-800 tracking-tight">
-            Agenda de Turnos
+            Surgery Schedule
           </h1>
           <p className="text-xs text-slate-400 mt-0.5">
             Gestión e historial de turnos para tratamientos y especialidades.
@@ -1103,14 +1075,11 @@ export default function CalendarPage() {
           return (
             <button
               key={s.id || s.name}
-              disabled={s.active === false}
-              onClick={() => s.active !== false && setViewFilter(s.name)}
+              onClick={() => setViewFilter(s.name)}
               className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all shrink-0 flex items-center gap-2 border ${
                 active
                   ? colors.activeFilter
-                  : s.active === false
-                    ? "bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed"
-                    : `${colors.bg} ${colors.text} ${colors.border} hover:opacity-90`
+                  : `${colors.bg} ${colors.text} ${colors.border} hover:opacity-90`
               }`}
             >
               <span
@@ -1118,10 +1087,7 @@ export default function CalendarPage() {
                   active ? "bg-white" : colors.badge.split(" ")[0]
                 }`}
               />
-              <span>
-                {s.name}
-                {s.active === false ? " · Bloqueada" : ""}
-              </span>
+              <span>{s.name}</span>
             </button>
           );
         })}
@@ -1384,13 +1350,8 @@ export default function CalendarPage() {
                     className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:border-[#4ADE80]"
                   >
                     {team.map((s) => (
-                      <option
-                        key={s.id || s.name}
-                        value={s.name}
-                        disabled={s.active === false}
-                      >
+                      <option key={s.id || s.name} value={s.name}>
                         {s.name}
-                        {s.active === false ? " (Actualiza tu plan)" : ""}
                       </option>
                     ))}
                   </select>
@@ -1401,7 +1362,7 @@ export default function CalendarPage() {
                     Tratamientos
                   </label>
                   <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
-                    {availableServices.filter(isServiceAvailable).map((s) => {
+                    {availableServices.map((s) => {
                       const isSelected =
                         currentApp.selectedServiceIds?.includes(s.id);
                       return (

@@ -780,6 +780,7 @@ export default function CalendarPage() {
   const [selectedMethod, setSelectedMethod] = useState("cash");
   const [user, setUser] = useState(null);
   const [team, setTeam] = useState([]);
+  const [plan, setPlan] = useState("Inicial");
   const [availableServices, setAvailableServices] = useState([]);
   const [appointments, setAppointments] = useState([]);
   const [viewFilter, setViewFilter] = useState("all");
@@ -809,10 +810,11 @@ export default function CalendarPage() {
         if (docSnap.exists()) {
           const data = docSnap.data();
           const specialistLimit = SPECIALIST_LIMITS[data.plan?.type] || 1;
+          setPlan(data.plan?.type || "Inicial");
           setTeam(
             (data.specialists || []).map((specialist, index) => ({
               ...specialist,
-              active: index < specialistLimit,
+              active: specialist.active !== false || index < specialistLimit,
             })),
           );
           setAvailableServices(data.services || []);
@@ -904,9 +906,6 @@ export default function CalendarPage() {
         const specialist = team.find(
           (item) => item.name === currentApp.specialist,
         );
-        if (s?.specialistIds?.length && !s.specialistIds.includes(specialist?.id)) {
-          return acc;
-        }
         const specialistPrice = s?.specialistPrices?.[specialist?.id];
         const specialistTime = s?.specialistTimes?.[specialist?.id];
         return {
@@ -926,12 +925,6 @@ export default function CalendarPage() {
     availableServices,
     team,
   ]);
-
-  const isServiceAvailable = (service) => {
-    if (!service.specialistIds?.length) return true;
-    const specialist = team.find((item) => item.name === currentApp.specialist);
-    return service.specialistIds.includes(specialist?.id);
-  };
 
   const handleSave = async (e) => {
     if (e) e.preventDefault();
@@ -1401,7 +1394,7 @@ export default function CalendarPage() {
                     Tratamientos
                   </label>
                   <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
-                    {availableServices.filter(isServiceAvailable).map((s) => {
+                    {availableServices.map((s) => {
                       const isSelected =
                         currentApp.selectedServiceIds?.includes(s.id);
                       return (

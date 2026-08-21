@@ -1194,7 +1194,7 @@ export default function LandingEsteticaIntegral() {
               },
               {
                 name: "Starter",
-                price: "$1490",
+                price: "$1,160",
                 features: [
                   "1 Especialista",
                   "90 Citas",
@@ -1205,23 +1205,23 @@ export default function LandingEsteticaIntegral() {
               },
               {
                 name: "Profesional",
-                price: "$2460",
+                price: "$1,960",
                 popular: true,
                 features: [
                   "3 Especialistas",
                   "250 Citas",
                   "Recordatorios WhatsApp",
-                  "Historial  Digital",
+                  "Historial Clínico Digital",
                   "Reportes de Comisiones",
                 ],
               },
               {
                 name: "Business",
-                price: "$3,650",
+                price: "$3,160",
                 features: [
                   "5 Especialistas",
                   "Citas sin límite",
-                  "Historial  Digital",
+                  "Historial Clínico Digital",
                   "Módulo de Finanzas",
                   "Reportes Avanzados",
                   "Soporte Prioritario",

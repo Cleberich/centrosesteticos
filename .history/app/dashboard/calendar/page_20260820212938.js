@@ -1401,7 +1401,7 @@ export default function CalendarPage() {
                     Tratamientos
                   </label>
                   <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
-                    {availableServices.filter(isServiceAvailable).map((s) => {
+                    {availableServices.map((s) => {
                       const isSelected =
                         currentApp.selectedServiceIds?.includes(s.id);
                       return (

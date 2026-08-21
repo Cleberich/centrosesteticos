@@ -83,7 +83,7 @@ export default function AdminSidebar() {
               +
             </div>
             <div>
-              <span className="capitalize text-lg font-bold tracking-tight text-slate-800 block leading-none">
+              <span className="text-lg font-bold tracking-tight text-slate-800 block leading-none">
                 estetica integral
               </span>
               <span className="text-[10px] font-bold text-[#a855f7] uppercase tracking-wider">

@@ -353,7 +353,7 @@ export default function DashboardLayout({ children }) {
             <div className="w-6 h-6 rounded-md bg-[#d87cef] flex items-center justify-center text-slate-900 font-bold text-xs shadow-xs">
               ✦
             </div>
-            <span className="text-xl capitalize font-extrabold text-slate-800 tracking-tight">
+            <span className="text-xl font-extrabold text-slate-800 tracking-tight">
               {userData?.businessName?.toLowerCase() || "byutie"}
             </span>
           </div>

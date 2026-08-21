@@ -478,6 +478,7 @@ export default function PublicBookingPage() {
   const [availableSlots, setAvailableSlots] = useState([]);
   const [selectedDateObj, setSelectedDateObj] = useState(null);
   const [dateOptions, setDateOptions] = useState([]);
+  const [selectionTab, setSelectionTab] = useState("services");
   const bookingEmailService =
     process.env.NEXT_PUBLIC_EMAILJS_SERVICE_ID || "service_bm0xbov";
   const bookingEmailTemplate =
@@ -751,18 +752,34 @@ export default function PublicBookingPage() {
                 Paso 1 de 2
               </span>
               <h2 className="text-2xl font-extrabold text-slate-800 tracking-tight">
-                Elige tu servicio y especialista
+                ¿Qué servicio quieres reservar?
               </h2>
               <p className="text-xs font-medium text-slate-400 max-w-xs mx-auto">
-                Primero selecciona uno o varios servicios. Luego elige quién te atenderá.
+                Selecciona uno o varios servicios y la especialista que los realiza.
               </p>
             </div>
 
-            <div>
-              <p className="mb-3 text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                Servicios
-              </p>
-              <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+            <div className="flex rounded-2xl bg-white border border-rose-100/70 p-1.5">
+              {[
+                ["services", "Servicios"],
+                ["specialists", "Especialistas"],
+              ].map(([value, label]) => (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => setSelectionTab(value)}
+                  className={`flex-1 rounded-xl py-3 text-xs font-bold transition-colors ${selectionTab === value ? "bg-emerald-400 text-white" : "text-slate-500 hover:bg-slate-50"}`}
+                >
+                  {label}
+                  {value === "services" && booking.selectedServiceIds.length > 0
+                    ? ` (${booking.selectedServiceIds.length})`
+                    : ""}
+                </button>
+              ))}
+            </div>
+
+            {selectionTab === "services" ? (
+              <div className="grid grid-cols-1 gap-3">
                 {estetica?.services?.map((service) => {
                   const selected = booking.selectedServiceIds.includes(service.id);
                   return (
@@ -783,22 +800,20 @@ export default function PublicBookingPage() {
                           specialist: "",
                         });
                       }}
-                      className={`shrink-0 rounded-full border px-4 py-3 text-xs font-bold transition-all ${selected ? "border-emerald-400 bg-emerald-400 text-white" : "border-slate-200 bg-white text-slate-600 hover:border-emerald-300"}`}
+                      className={`w-full flex items-center justify-between p-4 bg-white border rounded-3xl transition-all text-left ${selected ? "border-emerald-400 bg-emerald-50/50" : "border-rose-100/70 hover:border-emerald-300"}`}
                     >
-                      {service.name}
+                      <div>
+                        <p className="font-bold text-slate-800 text-sm">{service.name}</p>
+                        <p className="text-[11px] font-medium text-slate-400 mt-0.5">{service.category || "Servicio de estética"}</p>
+                      </div>
+                      {selected && <CheckCircle2 size={19} className="text-emerald-500" />}
                     </button>
                   );
                 })}
               </div>
-            </div>
-
-            <div>
-              <p className="mb-3 text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                Especialistas disponibles
-              </p>
+            ) : (
               <div className="grid grid-cols-1 gap-3">
-                {estetica?.specialists
-                  ?.map((specialist) => {
+                {estetica?.specialists?.map((specialist) => {
                   const available = canSpecialistPerformSelection(specialist);
                   const selected = booking.specialist === specialist.name;
                   return (
@@ -809,26 +824,16 @@ export default function PublicBookingPage() {
                       onClick={() => available && setBooking({ ...booking, specialist: specialist.name, duration: getBookingDuration(specialist.name) })}
                       className={`flex items-center justify-between rounded-3xl border p-4 text-left transition-colors ${selected ? "border-emerald-400 bg-emerald-50" : available ? "border-rose-100/70 bg-white hover:border-emerald-300" : "border-slate-200 bg-slate-100 opacity-50 cursor-not-allowed"}`}
                     >
-                      <div className="flex items-center gap-3">
-                        <img
-                          src={
-                            specialist.imageUrl ||
-                            `https://api.dicebear.com/7.x/adventurer/svg?seed=${specialist.name}`
-                          }
-                          alt={specialist.name}
-                          className="size-14 rounded-2xl object-cover border border-rose-100 bg-rose-50"
-                        />
-                        <div>
+                      <div>
                         <p className="font-bold text-slate-800 text-sm">{specialist.name}</p>
                         <p className="text-[11px] text-slate-400">{available ? specialist.specialty || "Especialista en Estética" : "No realiza todos los servicios seleccionados"}</p>
-                        </div>
                       </div>
                       {selected && <CheckCircle2 size={19} className="text-emerald-500" />}
                     </button>
                   );
-                  })}
+                })}
               </div>
-            </div>
+            )}
 
             <button
               type="button"

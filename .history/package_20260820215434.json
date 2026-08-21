@@ -7,8 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "seed:appointments": "node --env-file=.env.local scripts/seed-demo-appointments.mjs",  "seed:dashboard": "node --env-file=.env.local scripts/seed-dashboard-demo.mjs"
-
+    "seed:appointments": "node --env-file=.env.local scripts/seed-demo-appointments.mjs"
   },
   "dependencies": {
     "@emailjs/browser": "^4.4.1",

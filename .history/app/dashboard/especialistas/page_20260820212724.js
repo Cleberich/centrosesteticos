@@ -421,6 +421,7 @@ export default function SpecialistsByutiePage() {
   };
 
   const isSpecialistAvailable = (specialist) =>
+    specialist.active !== false ||
     specialists.indexOf(specialist) < (PLAN_LIMITS[plan] || 1);
 
   useEffect(() => {

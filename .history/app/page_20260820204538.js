@@ -1211,7 +1211,7 @@ export default function LandingEsteticaIntegral() {
                   "3 Especialistas",
                   "250 Citas",
                   "Recordatorios WhatsApp",
-                  "Historial  Digital",
+                  "Historial Clínico Digital",
                   "Reportes de Comisiones",
                 ],
               },
@@ -1221,7 +1221,7 @@ export default function LandingEsteticaIntegral() {
                 features: [
                   "5 Especialistas",
                   "Citas sin límite",
-                  "Historial  Digital",
+                  "Historial Clínico Digital",
                   "Módulo de Finanzas",
                   "Reportes Avanzados",
                   "Soporte Prioritario",

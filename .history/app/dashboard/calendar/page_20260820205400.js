@@ -679,7 +679,6 @@ import {
   Phone,
   ChevronLeft,
   ChevronRight,
-  Calendar as CalendarIcon,
 } from "lucide-react";
 import { auth, db } from "@/services/firebase";
 import { onAuthStateChanged } from "firebase/auth";
@@ -697,24 +696,7 @@ const DAYS = [
   "Domingo",
 ];
 
-// Helper para obtener el Lunes de la semana dada una fecha
-function getMonday(d) {
-  const date = new Date(d);
-  const day = date.getDay();
-  const diff = date.getDate() - day + (day === 0 ? -6 : 1);
-  date.setDate(diff);
-  date.setHours(0, 0, 0, 0);
-  return date;
-}
-
-// Helper para formatear 'YYYY-MM-DD' en hora local
-function formatDateISO(date) {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-}
-
+// Paleta ampliada estilo Byutie (Salmón pastel, Menta, Lavanda, Piel/Naranja, Azul soft, Amarillo)
 const SPECIALIST_COLORS = [
   {
     bg: "bg-[#FFE4E6]",
@@ -759,12 +741,6 @@ const SPECIALIST_COLORS = [
     activeFilter: "bg-[#CA8A04] text-white border-[#CA8A04]",
   },
 ];
-const SPECIALIST_LIMITS = {
-  Inicial: 1,
-  Starter: 1,
-  Profesional: 3,
-  Business: 5,
-};
 
 const PAYMENT_METHODS = [
   { id: "cash", name: "Efectivo", icon: <Banknote size={16} /> },
@@ -784,20 +760,15 @@ export default function CalendarPage() {
   const [appointments, setAppointments] = useState([]);
   const [viewFilter, setViewFilter] = useState("all");
 
-  // Estado de la semana seleccionada en la vista principal
-  const [currentWeekStart, setCurrentWeekStart] = useState(() =>
-    getMonday(new Date()),
-  );
-
   const [currentApp, setCurrentApp] = useState({
     id: null,
     customer: "",
     phone: "",
     specialist: "",
     start: "09:00",
+    day: 0,
     status: "pending",
     selectedServiceIds: [],
-    date: formatDateISO(new Date()),
   });
 
   useEffect(() => {
@@ -808,13 +779,7 @@ export default function CalendarPage() {
         const docSnap = await getDoc(docRef);
         if (docSnap.exists()) {
           const data = docSnap.data();
-          const specialistLimit = SPECIALIST_LIMITS[data.plan?.type] || 1;
-          setTeam(
-            (data.specialists || []).map((specialist, index) => ({
-              ...specialist,
-              active: index < specialistLimit,
-            })),
-          );
+          setTeam(data.specialists || []);
           setAvailableServices(data.services || []);
           setAppointments(data.appointments || []);
         }
@@ -824,55 +789,7 @@ export default function CalendarPage() {
     return () => unsubscribe();
   }, []);
 
-  // Generar los 7 días de la semana activa
-  const weekDays = useMemo(() => {
-    return Array.from({ length: 7 }).map((_, i) => {
-      const d = new Date(currentWeekStart);
-      d.setDate(d.getDate() + i);
-      return d;
-    });
-  }, [currentWeekStart]);
-
-  // Rango ISO de la semana en vista
-  const currentWeekISORange = useMemo(() => {
-    return weekDays.map((d) => formatDateISO(d));
-  }, [weekDays]);
-
-  // Texto de Mes/Año en la cabecera
-  const monthYearLabel = useMemo(() => {
-    const endOfWeek = weekDays[6];
-    const startMonth = currentWeekStart.toLocaleDateString("es-ES", {
-      month: "long",
-    });
-    const endMonth = endOfWeek.toLocaleDateString("es-ES", {
-      month: "long",
-    });
-    const year = currentWeekStart.getFullYear();
-
-    if (startMonth === endMonth) {
-      return `${
-        startMonth.charAt(0).toUpperCase() + startMonth.slice(1)
-      } ${year}`;
-    }
-    return `${startMonth.slice(0, 3)} - ${endMonth.slice(0, 3)} ${year}`;
-  }, [currentWeekStart, weekDays]);
-
-  const handlePrevWeek = () => {
-    const prev = new Date(currentWeekStart);
-    prev.setDate(prev.getDate() - 7);
-    setCurrentWeekStart(prev);
-  };
-
-  const handleNextWeek = () => {
-    const next = new Date(currentWeekStart);
-    next.setDate(next.getDate() + 7);
-    setCurrentWeekStart(next);
-  };
-
-  const handleToday = () => {
-    setCurrentWeekStart(getMonday(new Date()));
-  };
-
+  // Mapeo dinámico de especialistas -> Colores únicos
   const specialistColorMap = useMemo(() => {
     const map = {};
     team.forEach((s, i) => {
@@ -881,17 +798,10 @@ export default function CalendarPage() {
     return map;
   }, [team]);
 
-  // Filtrar citas que pertenecen a la semana en pantalla
-  const visibleAppointments = useMemo(() => {
-    return appointments.filter((app) => {
-      const matchesWeek = app.date
-        ? currentWeekISORange.includes(app.date)
-        : true;
-      const matchesFilter =
-        viewFilter === "all" ? true : app.specialist === viewFilter;
-      return matchesWeek && matchesFilter;
-    });
-  }, [appointments, currentWeekISORange, viewFilter]);
+  const filteredAppointments = useMemo(() => {
+    if (viewFilter === "all") return appointments;
+    return appointments.filter((app) => app.specialist === viewFilter);
+  }, [appointments, viewFilter]);
 
   const { totalAmount, totalDuration } = useMemo(() => {
     if (!currentApp.selectedServiceIds?.length)
@@ -901,55 +811,31 @@ export default function CalendarPage() {
         const s = availableServices.find(
           (svc) => String(svc.id) === String(id),
         );
-        const specialist = team.find(
-          (item) => item.name === currentApp.specialist,
-        );
-        if (s?.specialistIds?.length && !s.specialistIds.includes(specialist?.id)) {
-          return acc;
-        }
-        const specialistPrice = s?.specialistPrices?.[specialist?.id];
-        const specialistTime = s?.specialistTimes?.[specialist?.id];
         return {
-          totalAmount:
-            acc.totalAmount +
-            (Number(specialistPrice) || Number(s?.price) || 0),
-          totalDuration:
-            acc.totalDuration +
-            (Number(specialistTime) || Number(s?.time) || 60),
+          totalAmount: acc.totalAmount + (Number(s?.price) || 0),
+          totalDuration: acc.totalDuration + (Number(s?.time) || 60),
         };
       },
       { totalAmount: 0, totalDuration: 0 },
     );
-  }, [
-    currentApp.selectedServiceIds,
-    currentApp.specialist,
-    availableServices,
-    team,
-  ]);
-
-  const isServiceAvailable = (service) => {
-    if (!service.specialistIds?.length) return true;
-    const specialist = team.find((item) => item.name === currentApp.specialist);
-    return service.specialistIds.includes(specialist?.id);
-  };
+  }, [currentApp.selectedServiceIds, availableServices]);
 
   const handleSave = async (e) => {
     if (e) e.preventDefault();
     if (!currentApp.customer) return alert("Ingresa el nombre del paciente");
-    if (!currentApp.date) return alert("Selecciona una fecha para la cita");
-
-    // Convertir la fecha ingresada para saber el día de la semana (0: Lunes, 6: Domingo)
-    const [y, m, d] = currentApp.date.split("-").map(Number);
-    const selectedDate = new Date(y, m - 1, d);
-    const dayIndex =
-      selectedDate.getDay() === 0 ? 6 : selectedDate.getDay() - 1;
+    const today = new Date();
+    const targetDate = new Date(today);
+    targetDate.setDate(
+      today.getDate() +
+        (currentApp.day - (today.getDay() === 0 ? 6 : today.getDay() - 1)),
+    );
 
     const appData = {
       ...currentApp,
       id: currentApp.id || Math.random().toString(36).substring(2, 15),
-      day: dayIndex,
       total: totalAmount,
       duration: totalDuration,
+      date: targetDate.toLocaleDateString("sv-SE"),
       createdAt: currentApp.createdAt || new Date().toISOString(),
     };
 
@@ -965,9 +851,6 @@ export default function CalendarPage() {
       appointments: newList,
     });
     setAppointments(newList);
-
-    // Mover automáticamente el calendario a la semana de la cita guardada
-    setCurrentWeekStart(getMonday(selectedDate));
     setIsDrawerOpen(false);
   };
 
@@ -1021,7 +904,7 @@ export default function CalendarPage() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
         <div>
           <h1 className="text-2xl font-bold text-slate-800 tracking-tight">
-            Agenda de Turnos
+            Surgery Schedule
           </h1>
           <p className="text-xs text-slate-400 mt-0.5">
             Gestión e historial de turnos para tratamientos y especialidades.
@@ -1029,32 +912,14 @@ export default function CalendarPage() {
         </div>
 
         <div className="flex items-center gap-3">
-          {/* NAVEGACIÓN ENTRE SEMANAS Y BOTÓN HOY */}
-          <div className="flex items-center gap-1 bg-white border border-slate-200/80 rounded-xl px-2 py-1 shadow-xs">
-            <button
-              onClick={handlePrevWeek}
-              className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors"
-              title="Semana anterior"
-            >
+          <div className="flex items-center bg-white border border-slate-200/80 rounded-xl px-2 py-1 shadow-xs">
+            <button className="p-1.5 text-slate-400 hover:text-slate-700">
               <ChevronLeft size={16} />
             </button>
-
-            <button
-              onClick={handleToday}
-              className="px-2.5 py-1 text-[11px] font-bold text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
-            >
-              Hoy
-            </button>
-
-            <span className="text-xs font-semibold text-slate-700 px-2 min-w-[130px] text-center">
-              {monthYearLabel}
+            <span className="text-xs font-semibold text-slate-700 px-3">
+              Septiembre 2026
             </span>
-
-            <button
-              onClick={handleNextWeek}
-              className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors"
-              title="Semana siguiente"
-            >
+            <button className="p-1.5 text-slate-400 hover:text-slate-700">
               <ChevronRight size={16} />
             </button>
           </div>
@@ -1067,9 +932,9 @@ export default function CalendarPage() {
                 phone: "",
                 specialist: team[0]?.name || "",
                 start: "09:00",
+                day: 0,
                 status: "pending",
                 selectedServiceIds: [],
-                date: formatDateISO(new Date()),
               });
               setShowPaymentSelector(false);
               setIsDrawerOpen(true);
@@ -1082,7 +947,7 @@ export default function CalendarPage() {
         </div>
       </div>
 
-      {/* FILTROS POR ESPECIALISTA */}
+      {/* FILTROS POR ESPECIALISTA (CON COLOR ASIGNADO) */}
       <div className="flex items-center gap-2 overflow-x-auto pb-3 mb-2 scrollbar-hide">
         <button
           onClick={() => setViewFilter("all")}
@@ -1103,14 +968,11 @@ export default function CalendarPage() {
           return (
             <button
               key={s.id || s.name}
-              disabled={s.active === false}
-              onClick={() => s.active !== false && setViewFilter(s.name)}
+              onClick={() => setViewFilter(s.name)}
               className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all shrink-0 flex items-center gap-2 border ${
                 active
                   ? colors.activeFilter
-                  : s.active === false
-                    ? "bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed"
-                    : `${colors.bg} ${colors.text} ${colors.border} hover:opacity-90`
+                  : `${colors.bg} ${colors.text} ${colors.border} hover:opacity-90`
               }`}
             >
               <span
@@ -1118,10 +980,7 @@ export default function CalendarPage() {
                   active ? "bg-white" : colors.badge.split(" ")[0]
                 }`}
               />
-              <span>
-                {s.name}
-                {s.active === false ? " · Bloqueada" : ""}
-              </span>
+              <span>{s.name}</span>
             </button>
           );
         })}
@@ -1129,35 +988,24 @@ export default function CalendarPage() {
 
       {/* CONTENEDOR DEL CALENDARIO */}
       <div className="flex-1 w-full bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden flex flex-col">
-        {/* Cabecera de días con número dinámico */}
+        {/* Cabecera de días */}
         <div className="grid grid-cols-8 border-b border-slate-100 bg-[#FAF8F5]/50 text-slate-500 font-semibold text-xs">
           <div className="p-3 text-center border-r border-slate-100 text-[11px] text-slate-400">
             GMT-3
           </div>
-          {weekDays.map((dateObj, index) => {
-            const isToday =
-              formatDateISO(dateObj) === formatDateISO(new Date());
-
-            return (
-              <div
-                key={index}
-                className={`py-3 text-center border-r border-slate-100 last:border-r-0 ${
-                  isToday ? "bg-[#DCFCE7]/40" : ""
-                }`}
-              >
-                <span className="block text-[10px] text-slate-400 uppercase tracking-wider font-bold">
-                  {DAYS[index].substring(0, 3)}
-                </span>
-                <span
-                  className={`text-sm font-extrabold inline-block px-2 py-0.5 rounded-full ${
-                    isToday ? "bg-[#15803D] text-white" : "text-slate-800"
-                  }`}
-                >
-                  {dateObj.getDate()}
-                </span>
-              </div>
-            );
-          })}
+          {DAYS.map((d, index) => (
+            <div
+              key={d}
+              className="py-3 text-center border-r border-slate-100 last:border-r-0"
+            >
+              <span className="block text-[10px] text-slate-400 uppercase tracking-wider font-bold">
+                {d.substring(0, 3)}
+              </span>
+              <span className="text-sm font-extrabold text-slate-800">
+                {18 + index}
+              </span>
+            </div>
+          ))}
         </div>
 
         {/* Grilla de horas */}
@@ -1195,19 +1043,13 @@ export default function CalendarPage() {
               </div>
             ))}
 
-            {/* Render de Citas Visibles */}
-            {visibleAppointments.map((app) => {
+            {/* Render de Tarjetas con Color de Especialista */}
+            {filteredAppointments.map((app) => {
               const colors =
                 specialistColorMap[app.specialist] || SPECIALIST_COLORS[0];
               const topPos = getTimeTop(app.start);
               const heightPos =
                 ((Number(app.duration) || 60) / 60) * HOUR_HEIGHT - 6;
-
-              let dayIndex = app.day;
-              if (app.date) {
-                const idx = currentWeekISORange.indexOf(app.date);
-                if (idx !== -1) dayIndex = idx;
-              }
 
               return (
                 <div
@@ -1221,7 +1063,7 @@ export default function CalendarPage() {
                   style={{
                     top: topPos + 3,
                     height: Math.max(heightPos, 50),
-                    left: `calc(${(dayIndex + 1) * 12.5}% + 3px)`,
+                    left: `calc(${(app.day + 1) * 12.5}% + 3px)`,
                     width: "calc(12.5% - 6px)",
                   }}
                 >
@@ -1325,30 +1167,27 @@ export default function CalendarPage() {
                   </div>
                 </div>
 
-                {/* SELECTOR DE FECHA COMPLETA Y HORA */}
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="text-[11px] font-bold text-slate-500 block mb-1">
-                      Fecha de Cita
+                      Día
                     </label>
-                    <div className="relative">
-                      <CalendarIcon
-                        className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
-                        size={14}
-                      />
-                      <input
-                        type="date"
-                        required
-                        value={currentApp.date}
-                        onChange={(e) =>
-                          setCurrentApp({
-                            ...currentApp,
-                            date: e.target.value,
-                          })
-                        }
-                        className="w-full pl-9 pr-2 py-2 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:border-[#4ADE80]"
-                      />
-                    </div>
+                    <select
+                      value={currentApp.day}
+                      onChange={(e) =>
+                        setCurrentApp({
+                          ...currentApp,
+                          day: parseInt(e.target.value),
+                        })
+                      }
+                      className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:border-[#4ADE80]"
+                    >
+                      {DAYS.map((d, i) => (
+                        <option key={i} value={i}>
+                          {d}
+                        </option>
+                      ))}
+                    </select>
                   </div>
                   <div>
                     <label className="text-[11px] font-bold text-slate-500 block mb-1">
@@ -1356,7 +1195,6 @@ export default function CalendarPage() {
                     </label>
                     <input
                       type="time"
-                      required
                       value={currentApp.start}
                       onChange={(e) =>
                         setCurrentApp({
@@ -1384,13 +1222,8 @@ export default function CalendarPage() {
                     className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:border-[#4ADE80]"
                   >
                     {team.map((s) => (
-                      <option
-                        key={s.id || s.name}
-                        value={s.name}
-                        disabled={s.active === false}
-                      >
+                      <option key={s.id || s.name} value={s.name}>
                         {s.name}
-                        {s.active === false ? " (Actualiza tu plan)" : ""}
                       </option>
                     ))}
                   </select>
@@ -1401,7 +1234,7 @@ export default function CalendarPage() {
                     Tratamientos
                   </label>
                   <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
-                    {availableServices.filter(isServiceAvailable).map((s) => {
+                    {availableServices.map((s) => {
                       const isSelected =
                         currentApp.selectedServiceIds?.includes(s.id);
                       return (

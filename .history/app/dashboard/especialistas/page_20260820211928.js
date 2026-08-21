@@ -388,7 +388,6 @@ import {
   Camera,
   Loader2,
   AlertTriangle,
-  LockKeyhole,
 } from "lucide-react";
 // Firebase
 import { auth, db } from "@/services/firebase";
@@ -419,9 +418,6 @@ export default function SpecialistsByutiePage() {
     Profesional: 3,
     Business: 5,
   };
-
-  const isSpecialistAvailable = (specialist) =>
-    specialists.indexOf(specialist) < (PLAN_LIMITS[plan] || 1);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
@@ -605,17 +601,14 @@ export default function SpecialistsByutiePage() {
 
         {/* Doctor Grid (Fiel al Layout Byutie) */}
         <div className="p-10 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {filteredSpecialists.map((s) => {
-            const isAvailable = isSpecialistAvailable(s);
-            return (
+          {filteredSpecialists.map((s) => (
             <div
               key={s.id}
-              className={`bg-white border rounded-3xl p-6 flex flex-col items-center text-center shadow-xs transition-shadow relative group ${!isAvailable ? "border-amber-200 bg-amber-50/40 opacity-75" : "border-slate-200/70 hover:shadow-md"}`}
+              className="bg-white border border-slate-200/70 rounded-3xl p-6 flex flex-col items-center text-center shadow-xs hover:shadow-md transition-shadow relative group"
             >
               {/* Botón Editar rápido */}
               <button
-                onClick={() => isAvailable && handleOpenEdit(s)}
-                disabled={!isAvailable}
+                onClick={() => handleOpenEdit(s)}
                 className="absolute top-4 right-4 text-slate-300 hover:text-slate-600 p-1 opacity-0 group-hover:opacity-100 transition-opacity"
               >
                 <MoreVertical size={16} />
@@ -638,12 +631,6 @@ export default function SpecialistsByutiePage() {
                 Dr. {s.name}
               </h3>
 
-              {!isAvailable && (
-                <div className="mt-2 inline-flex items-center gap-1 rounded-full bg-amber-100 px-2.5 py-1 text-[10px] font-bold text-amber-700">
-                  <LockKeyhole size={12} /> Bloqueada por tu plan
-                </div>
-              )}
-
               <div className="flex items-center gap-2 mt-1">
                 <span className="text-[10px] text-slate-400 font-medium">
                   DB-00{s.id % 99}
@@ -662,8 +649,7 @@ export default function SpecialistsByutiePage() {
               {/* Divider */}
               <div className="w-full h-px bg-slate-100 my-4" />
             </div>
-            );
-          })}
+          ))}
         </div>
       </main>
 

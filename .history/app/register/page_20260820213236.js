@@ -450,14 +450,10 @@ export default function RegisterPage() {
           (service) =>
             service.name.trim() &&
             (service.specialistIds || []).length > 0 &&
-            specialists
-              .filter((specialist) =>
-                service.specialistIds?.includes(specialist.id),
-              )
-              .every(
-                (specialist) =>
-                  Number(service.specialistPrices?.[specialist.id]) > 0 &&
-                  Number(service.specialistTimes?.[specialist.id]) > 0,
+            specialists.every(
+              (specialist) =>
+                Number(service.specialistPrices?.[specialist.id]) > 0 &&
+                Number(service.specialistTimes?.[specialist.id]) > 0,
             ),
         )
       );
@@ -488,7 +484,6 @@ export default function RegisterPage() {
           active: true,
           specialistPrices: {},
           specialistTimes: {},
-          specialistIds: [],
         },
       ]);
     }
@@ -860,8 +855,8 @@ export default function RegisterPage() {
                         ¿Quién realiza este servicio?
                       </p>
                       {specialists.map((specialist) => {
-                        const assigned = Boolean(
-                          service.specialistIds?.includes(specialist.id),
+                        const assigned = service.specialistIds?.includes(
+                          specialist.id,
                         );
                         return (
                           <div
